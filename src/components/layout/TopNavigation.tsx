@@ -30,77 +30,78 @@ export function TopNavigation() {
     toast.success(`Location set to ${city}, Namibia`);
   };
 
-  const displayName = profile?.display_name || "Budiarti Rohman";
-  const username = profile?.username || "budiartirohman";
+  const displayName = profile?.display_name || profile?.username || "Guest User";
+  const username = profile?.username || "user";
 
   return (
     <>
       <header
-        className="sticky top-0 z-40 flex items-center justify-between px-5 pb-3 bg-gradient-to-b from-[#0B0A09] via-[#0B0A09]/95 to-transparent backdrop-blur-md"
+        className="sticky top-0 z-40 flex items-center justify-between px-5 pb-2 bg-[#0B0A09]"
         style={{
           paddingTop: "calc(12px + env(safe-area-inset-top))",
         }}
       >
-        {/* 1. Left Action: User Avatar & Handle */}
+        {/* 1. Left Action: User Identity */}
         <div
           onClick={() => navigate("/profile")}
           className="flex items-center gap-2.5 cursor-pointer group hover:opacity-90 transition min-w-0"
         >
           <Avatar
-            size={38}
+            size={36}
             profile={{
               id: profile?.id || "me",
               display_name: displayName,
               avatar_url: profile?.avatar_url,
             }}
-            className="rounded-full ring-2 ring-[#FFB800]/50"
+            className="rounded-full"
           />
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold text-white leading-tight truncate group-hover:text-[#FFB800] transition">
+            <span className="text-sm font-bold text-white leading-tight truncate">
               {displayName}
             </span>
-            <span className="text-[11px] text-white/50 truncate">@{username}</span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsCityModalOpen(true);
+                }}
+                className="flex items-center gap-0.5 text-[11px] text-white/50 hover:text-white transition"
+              >
+                <span>{selectedCity}</span>
+                <ChevronDown size={10} />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* 2. Center Location Pill */}
-        <button
-          onClick={() => setIsCityModalOpen(true)}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 text-white/80 hover:text-white text-[10px] font-bold border border-white/10 transition active:scale-95 shrink-0"
-        >
-          <MapPin size={9} className="text-[#FFB800]" />
-          <span>{selectedCity}</span>
-          <ChevronDown size={9} className="text-white/50" />
-        </button>
-
-        {/* 3. Right Header Actions (Audio, Heart/Activity, Messages) */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* 2. Right Actions: Naked Icons with 44px hit targets */}
+        <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => navigate("/rooms")}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/80 hover:text-white transition active:scale-95 border border-white/10"
+            className="w-11 h-11 flex items-center justify-center text-white/70 hover:text-white transition active:scale-95"
             aria-label="Rooms"
             title="Rooms"
           >
-            <Headphones size={16} />
+            <Headphones size={20} />
           </button>
 
           <button
             onClick={() => navigate("/activity")}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/80 hover:text-white transition active:scale-95 border border-white/10"
+            className="w-11 h-11 flex items-center justify-center text-white/70 hover:text-white transition active:scale-95"
             aria-label="Activity"
             title="Activity"
           >
-            <Heart size={16} />
+            <Heart size={20} />
           </button>
 
           <button
             onClick={() => navigate("/messages")}
-            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/80 hover:text-white transition active:scale-95 border border-white/10"
+            className="relative w-11 h-11 flex items-center justify-center text-white/70 hover:text-white transition active:scale-95"
             aria-label="Messages"
             title="Messages"
           >
-            <MessageCircle size={16} />
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#FFB800] shadow-[0_0_6px_#FFB800]" />
+            <MessageCircle size={20} />
+            <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-[#FFB800]" />
           </button>
         </div>
       </header>
@@ -108,7 +109,7 @@ export function TopNavigation() {
       {/* City Selector Modal */}
       {isCityModalOpen && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-xs rounded-[28px] glass-panel-elevated p-5 bg-[#181513] text-white border border-white/20 shadow-2xl">
+          <div className="w-full max-w-xs rounded-2xl p-5 bg-[#181513] text-white border border-white/10 shadow-xl">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <MapPin size={16} className="text-[#FFB800]" />

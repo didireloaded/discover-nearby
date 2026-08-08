@@ -21,10 +21,10 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
 
   return (
     <nav
-      className={`fixed left-1/2 z-50 grid grid-cols-5 items-center -translate-x-1/2 overflow-hidden rounded-full border border-white/12 bg-[#231F1C]/95 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-2xl transition-all duration-300 ease-out hover:opacity-100 ${
+      className={`fixed left-1/2 z-50 grid grid-cols-5 items-center -translate-x-1/2 overflow-hidden rounded-full border border-white/10 bg-[#181513] shadow-lg transition-all duration-300 ease-out ${
         compact
-          ? "bottom-3 h-11 w-[72%] max-w-[290px] px-1 opacity-85 translate-y-1 scale-95"
-          : "bottom-5 h-14 w-[92%] max-w-[390px] px-2 opacity-100 translate-y-0 scale-100"
+          ? "bottom-3 h-11 w-[72%] max-w-[290px] px-1 opacity-90 scale-95"
+          : "bottom-5 h-14 w-[92%] max-w-[390px] px-2 opacity-100 scale-100"
       }`}
       style={{
         marginBottom: "env(safe-area-inset-bottom)",
@@ -43,9 +43,7 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
         >
           <Home size={20} strokeWidth={isHomeActive ? 2.5 : 2} />
         </div>
-        {isHomeActive && (
-          <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#FFB800] shadow-[0_0_8px_#FFB800]" />
-        )}
+        {isHomeActive && <span className="absolute bottom-1.5 w-1 h-1 rounded-full bg-[#FFB800]" />}
       </Link>
 
       {/* 2. Explore / Search */}
@@ -62,14 +60,14 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
           <Search size={20} strokeWidth={isExploreActive ? 2.5 : 2} />
         </div>
         {isExploreActive && (
-          <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#FFB800] shadow-[0_0_8px_#FFB800]" />
+          <span className="absolute bottom-1.5 w-1 h-1 rounded-full bg-[#FFB800]" />
         )}
       </Link>
 
-      {/* 3. Center Create Trigger (Raised circular white button matching blueprint) */}
+      {/* 3. Center Create Trigger */}
       <button
         onClick={onOpenCreate}
-        className={`mx-auto flex shrink-0 items-center justify-center rounded-full bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.45)] border border-white active:scale-90 transition-all duration-300 hover:scale-105 ${
+        className={`mx-auto flex shrink-0 items-center justify-center rounded-full bg-white text-black shadow-md border border-white active:scale-90 transition-all ${
           compact ? "h-8 w-8" : "h-10 w-10"
         }`}
         aria-label="Create"
@@ -77,7 +75,7 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
         <Plus size={compact ? 18 : 22} strokeWidth={3} className="text-black" />
       </button>
 
-      {/* 4. Notifications / Bell */}
+      {/* 4. Notifications / Activity */}
       <Link
         to="/activity"
         className="relative flex items-center justify-center py-1.5 transition active:scale-95 text-white/60 hover:text-white"
@@ -91,7 +89,7 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
           <Bell size={20} strokeWidth={isRoomsActive ? 2.5 : 2} />
         </div>
         {isRoomsActive && (
-          <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#FFB800] shadow-[0_0_8px_#FFB800]" />
+          <span className="absolute bottom-1.5 w-1 h-1 rounded-full bg-[#FFB800]" />
         )}
       </Link>
 
@@ -109,7 +107,7 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
           <User size={20} strokeWidth={isProfileActive ? 2.5 : 2} />
         </div>
         {isProfileActive && (
-          <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#FFB800] shadow-[0_0_8px_#FFB800]" />
+          <span className="absolute bottom-1.5 w-1 h-1 rounded-full bg-[#FFB800]" />
         )}
       </Link>
     </nav>

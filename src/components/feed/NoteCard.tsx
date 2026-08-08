@@ -32,17 +32,17 @@ export function NoteCard({ note }: NoteCardProps) {
   const authorId = note.user_id;
 
   // Reaction (Like) state
-  const [likesCount, setLikesCount] = useState<number>(note.reaction_count || 125000);
+  const [likesCount, setLikesCount] = useState<number>(note.reaction_count || 0);
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [likeLoading, setLikeLoading] = useState<boolean>(false);
 
   // Save state
   const { toggleSave, checkIsSaved } = useSaves();
   const [isSaved, setIsSaved] = useState<boolean>(false);
-  const [savesCount, setSavesCount] = useState<number>(680);
+  const [savesCount, setSavesCount] = useState<number>(0);
 
   // Comments state
-  const [commentsCount, setCommentsCount] = useState<number>(note.reply_count || 4568);
+  const [commentsCount, setCommentsCount] = useState<number>(note.reply_count || 0);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
 
   // Voice playback state
@@ -192,100 +192,107 @@ export function NoteCard({ note }: NoteCardProps) {
     return num.toLocaleString();
   };
 
-  const authorName = note.profiles?.display_name || note.profiles?.username || "Michael Franz";
-  const authorUsername = note.profiles?.username || "michael_franz_murdaya";
+  const authorName = note.profiles?.display_name || note.profiles?.username || "Creator";
+  const authorUsername = note.profiles?.username || "user";
   const waveformBars = note.waveform_data?.length
     ? note.waveform_data
     : [35, 60, 40, 80, 100, 50, 75, 90, 45, 65, 85, 30, 70, 95, 40, 60];
 
+  const timeAgoText = note.created_at
+    ? new Date(note.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "Just now";
+
   return (
-    <div className="relative w-full rounded-[28px] bg-[#181513] p-5 border border-white/10 shadow-2xl space-y-4 overflow-hidden">
-      {/* 1. Translucent Top Author Header Capsule */}
+    <div className="w-full rounded-2xl bg-[#181513] p-4 border border-white/10 space-y-3">
+      {/* 1. Clean Author Header */}
       <div className="flex items-center justify-between gap-3">
         <div
           onClick={() => navigate(`/profile/${authorUsername}`)}
-          className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 cursor-pointer group hover:bg-white/20 transition min-w-0"
+          className="flex items-center gap-2.5 cursor-pointer group min-w-0"
         >
           <Avatar
-            size={32}
+            size={36}
             profile={{
               id: authorId,
               display_name: authorName,
               avatar_url: note.profiles?.avatar_url,
             }}
+            className="rounded-full shrink-0"
           />
-          <div className="flex items-center gap-1 min-w-0">
-            <span className="text-xs font-bold text-white truncate max-w-[130px]">
-              {authorName}
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1 min-w-0">
+              <span className="text-xs font-bold text-white truncate group-hover:text-[#FFB800] transition">
+                {authorName}
+              </span>
+              <CheckCircle2 size={12} className="text-[#FFB800] shrink-0" />
+            </div>
+            <span className="text-[11px] text-white/50 truncate">
+              @{authorUsername} · {timeAgoText}
             </span>
-            <CheckCircle2 size={13} className="text-[#FFB800] fill-[#FFB800]/20 shrink-0" />
           </div>
-          <span className="text-[10px] text-white/50 shrink-0 font-medium">45 Minutes ago</span>
         </div>
 
         <button
           onClick={() => toast.info("Options menu")}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white/70 hover:text-white transition active:scale-95 shrink-0"
+          className="w-8 h-8 flex items-center justify-center text-white/50 hover:text-white transition active:scale-95 shrink-0"
           aria-label="More options"
         >
-          <MoreHorizontal size={17} />
+          <MoreHorizontal size={18} />
         </button>
       </div>
 
-      {/* 2. Media Image / Content */}
-      <div className="relative rounded-[22px] overflow-hidden">
+      {/* 2. Content / Media */}
+      <div className="space-y-3">
         {(note as any).media_url ? (
-          <div className="relative aspect-[4/3] w-full rounded-[22px] overflow-hidden bg-black/40 border border-white/10">
+          <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-black/40 border border-white/10">
             <img
               src={(note as any).media_url}
               alt="Note attachment"
               className="w-full h-full object-cover"
             />
             {note.content && (
-              <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
-                <p className="text-sm text-white font-medium line-clamp-2 leading-relaxed">
+              <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/90 to-transparent">
+                <p className="text-xs text-white font-medium line-clamp-2 leading-relaxed">
                   {note.content}
                 </p>
               </div>
             )}
           </div>
         ) : (
-          <div className="p-4 rounded-[22px] bg-white/[0.04] border border-white/10">
-            <p className="text-sm text-white/95 leading-relaxed font-normal">
-              {note.content ||
-                "My idol is an artist with a huge number of fans all around the world. Yes, he is one of the two dancers..."}
+          note.content && (
+            <p className="text-xs text-white/90 leading-relaxed whitespace-pre-line font-normal px-1">
+              {note.content}
             </p>
-          </div>
+          )
         )}
 
-        {/* Voice Player & Transcript */}
+        {/* Voice Player */}
         {note.type === "voice" && (
-          <div className="mt-3 space-y-2">
+          <div className="space-y-2">
             {note.audio_url && (
-              <div className="flex items-center gap-3 p-3 rounded-[20px] bg-white/5 border border-[#FFB800]/30 backdrop-blur-md">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
                 <button
                   onClick={toggleAudioPlayback}
-                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#FFB800] text-black shadow-md active:scale-90 transition"
+                  className="w-9 h-9 flex shrink-0 items-center justify-center rounded-full bg-[#FFB800] text-black shadow-md active:scale-95 transition"
                   aria-label={isPlaying ? "Pause voice note" : "Play voice note"}
                 >
                   {isPlaying ? (
-                    <Pause size={17} fill="black" />
+                    <Pause size={16} fill="black" />
                   ) : (
-                    <Play size={17} fill="black" className="ml-0.5" />
+                    <Play size={16} fill="black" className="ml-0.5" />
                   )}
                 </button>
 
                 <div className="flex-1 flex flex-col gap-1">
-                  <div className="relative flex items-center gap-1 h-7 overflow-hidden">
+                  <div className="relative flex items-center gap-1 h-6 overflow-hidden">
                     {waveformBars.slice(0, 24).map((heightVal, idx) => (
                       <div
                         key={idx}
-                        className={`w-1 rounded-full transition-all duration-200 ${
-                          isPlaying ? "bg-[#FFB800] animate-pulse" : "bg-white/30"
+                        className={`w-1 rounded-full transition-all ${
+                          isPlaying ? "bg-[#FFB800]" : "bg-white/30"
                         }`}
                         style={{
                           height: `${Math.max(20, heightVal)}%`,
-                          animationDelay: `${idx * 0.05}s`,
                         }}
                       />
                     ))}
@@ -299,24 +306,24 @@ export function NoteCard({ note }: NoteCardProps) {
             )}
 
             {note.transcript && (
-              <div className="px-3.5 py-2.5 rounded-[16px] bg-white/5 border border-white/10 text-xs text-white/90 space-y-1">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#FFB800] uppercase tracking-wider">
-                  <FileText size={12} /> Transcript
+              <div className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white/80 space-y-0.5">
+                <div className="flex items-center gap-1 text-[10px] font-bold text-[#FFB800] uppercase tracking-wider">
+                  <FileText size={11} /> Transcript
                 </div>
-                <p className="italic leading-relaxed text-white/85">"{note.transcript}"</p>
+                <p className="italic leading-relaxed">"{note.transcript}"</p>
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* 3. Bottom Reaction Bar (❤️ 125K | 💬 4.568 | 🔖 680) */}
-      <div className="flex items-center justify-between pt-1">
+      {/* 3. Naked Reaction Bar */}
+      <div className="flex items-center justify-between pt-2 border-t border-white/5">
         <div className="flex items-center gap-5">
           {/* Heart / Like */}
           <button
             onClick={handleLikeToggle}
-            className="flex items-center gap-1.5 text-white/80 hover:text-white transition active:scale-95"
+            className="flex items-center gap-1.5 text-white/70 hover:text-white transition active:scale-95"
             aria-label="Like"
           >
             <Heart
@@ -324,25 +331,29 @@ export function NoteCard({ note }: NoteCardProps) {
               fill={isLiked ? "#FFB800" : "none"}
               className={isLiked ? "text-[#FFB800]" : "text-white/70"}
             />
-            <span className={`text-xs font-bold ${isLiked ? "text-[#FFB800]" : "text-white/80"}`}>
-              {formatK(likesCount)}
+            <span
+              className={`text-xs font-semibold ${isLiked ? "text-[#FFB800]" : "text-white/70"}`}
+            >
+              {likesCount > 0 ? formatK(likesCount) : ""}
             </span>
           </button>
 
           {/* Comment */}
           <button
             onClick={() => setIsCommentsOpen(true)}
-            className="flex items-center gap-1.5 text-white/80 hover:text-white transition active:scale-95"
+            className="flex items-center gap-1.5 text-white/70 hover:text-white transition active:scale-95"
             aria-label="Comment"
           >
             <MessageCircle size={18} className="text-white/70" />
-            <span className="text-xs font-bold text-white/80">{formatK(commentsCount)}</span>
+            <span className="text-xs font-semibold text-white/70">
+              {commentsCount > 0 ? formatK(commentsCount) : ""}
+            </span>
           </button>
 
           {/* Save / Bookmark */}
           <button
             onClick={handleSaveToggle}
-            className="flex items-center gap-1.5 text-white/80 hover:text-white transition active:scale-95"
+            className="flex items-center gap-1.5 text-white/70 hover:text-white transition active:scale-95"
             aria-label="Save"
           >
             <Bookmark
@@ -350,8 +361,10 @@ export function NoteCard({ note }: NoteCardProps) {
               fill={isSaved ? "#FFB800" : "none"}
               className={isSaved ? "text-[#FFB800]" : "text-white/70"}
             />
-            <span className={`text-xs font-bold ${isSaved ? "text-[#FFB800]" : "text-white/80"}`}>
-              {formatK(savesCount)}
+            <span
+              className={`text-xs font-semibold ${isSaved ? "text-[#FFB800]" : "text-white/70"}`}
+            >
+              {savesCount > 0 ? formatK(savesCount) : ""}
             </span>
           </button>
         </div>
@@ -360,26 +373,25 @@ export function NoteCard({ note }: NoteCardProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              toast.success(`Joining live room for @${authorUsername}`);
               navigate("/rooms");
             }}
-            className="flex items-center gap-1 px-3 py-1 rounded-full bg-[#FFB800]/15 text-[#FFB800] text-[11px] font-bold border border-[#FFB800]/30 hover:bg-[#FFB800]/25 transition active:scale-95"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FFB800]/10 text-[#FFB800] text-[11px] font-bold hover:bg-[#FFB800]/20 transition active:scale-95"
           >
-            <Radio size={12} className="animate-pulse" />
+            <Radio size={11} />
             <span>Live</span>
           </button>
 
           <button
             onClick={handleShare}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/70 hover:text-white transition active:scale-95"
+            className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white transition active:scale-95"
             aria-label="Share"
           >
-            <Share2 size={15} />
+            <Share2 size={16} />
           </button>
         </div>
       </div>
 
-      {/* Real Comments Modal */}
+      {/* Comments Modal */}
       {isCommentsOpen && (
         <CommentsModal
           postId={note.id}
