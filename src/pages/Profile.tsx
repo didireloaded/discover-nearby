@@ -20,12 +20,13 @@ import { useFollow } from "@/hooks/useFollow";
 import { supabase } from "@/lib/supabase";
 import { Avatar } from "@/components/common/Avatar";
 import { NoteCard } from "@/components/feed/NoteCard";
+import { MessageService } from "@/services/messages";
 import { toast } from "sonner";
 
 export function Profile() {
   const { username } = useParams<{ username?: string }>();
   const navigate = useNavigate();
-  const { profile: currentUser } = useAuth();
+  const { profile: currentUser, requireAuth } = useAuth();
 
   const [isVoicemailOpen, setIsVoicemailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"posts" | "voice" | "events" | "saved">("posts");
@@ -242,7 +243,21 @@ export function Profile() {
               </button>
 
               <button
-                onClick={() => navigate(`/chat/${profileData.id || profileData.username}`)}
+                onClick={async () => {
+                  if (!currentUser?.id) return requireAuth();
+                  const targetUser = profileData?.id;
+                  if (!targetUser) return;
+                  toast.info("Opening direct message...");
+                  const convId = await MessageService.getOrCreateConversation(
+                    currentUser.id,
+                    targetUser,
+                  );
+                  if (convId) {
+                    navigate(`/messages/${convId}`);
+                  } else {
+                    toast.error("Could not start conversation");
+                  }
+                }}
                 className="flex-1 py-2 rounded-xl bg-white/10 text-white text-xs font-semibold hover:bg-white/15 transition active:scale-95 flex items-center justify-center gap-1.5"
               >
                 <MessageCircle size={14} />

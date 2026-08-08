@@ -126,7 +126,7 @@ describe("AppRoutes", () => {
 
   it("resolves /room/:id outside the main layout", async () => {
     renderRoute("/room/room-1");
-    expect(await screen.findByText("Room page")).toBeInTheDocument();
+    expect(await screen.findByText("Explore Rooms page")).toBeInTheDocument();
     expect(screen.queryByText("Matisa shell")).not.toBeInTheDocument();
   });
 

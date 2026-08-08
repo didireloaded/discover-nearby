@@ -15,7 +15,7 @@ interface AuthCtx {
   signOut: () => Promise<void>;
   showAuthModal: boolean;
   setShowAuthModal: (v: boolean) => void;
-  requireAuth: () => void;
+  requireAuth: (action?: () => void) => boolean;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -26,10 +26,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const requireAuth = () => setShowAuthModal(true);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+
+  const requireAuth = (action?: () => void): boolean => {
+    if (session?.user) {
+      if (action) action();
+      return true;
+    }
+    if (action) setPendingAction(() => action);
+    setShowAuthModal(true);
+    return false;
+  };
 
   const fetchProfile = async (userId: string) => {
-    // Simple select — no joins to tables that may not exist yet
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -42,14 +51,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (data) {
       setProfile(data as Profile);
-      // Needs onboarding if username isn't set yet
       setNeedsOnboarding(!data.username);
     } else {
       console.log(
         "[AuthContext] Profile missing. Attempting to create default profile for:",
         userId,
       );
-      // Create a default profile to prevent the app from hanging
       const defaultUsername = `user_${userId.substring(0, 8)}`;
       const { data: newProfile, error: insertError } = await supabase
         .from("profiles")
@@ -68,9 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (newProfile) {
         setProfile(newProfile as Profile);
-        setNeedsOnboarding(true); // Must still go through onboarding to pick a real username
+        setNeedsOnboarding(true);
       } else {
-        // Fallback if insert fails (shouldn't happen unless schema error)
         setProfile(null);
         setNeedsOnboarding(true);
       }
@@ -88,7 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
@@ -101,7 +106,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // Listen for auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -112,6 +116,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         onesignalAdapter.setExternalUserId(session.user.id);
         if (event === "SIGNED_IN") {
           Analytics.track("user_signed_in", { method: "email" });
+          if (pendingAction) {
+            pendingAction();
+            setPendingAction(null);
+          }
         }
       } else {
         setProfile(null);
@@ -124,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [pendingAction]);
 
   return (
     <Ctx.Provider

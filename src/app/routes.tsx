@@ -141,11 +141,12 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      {/* Consolidated room routes — map all aliases cleanly */}
-      <Route path="/rooms/:roomId" element={<KaraokeRoom />} />
-      <Route path="/room/:roomId" element={<KaraokeRoom />} />
+      {/* Disambiguated room routes */}
+      <Route path="/rooms/voice/:roomId" element={<ExploreRooms />} />
+      <Route path="/room/:roomId" element={<ExploreRooms />} />
+      <Route path="/rooms/karaoke/:roomId" element={<KaraokeRoom />} />
       <Route path="/karaoke/:roomId" element={<KaraokeRoom />} />
-      <Route path="/live/:roomId" element={<KaraokeRoom />} />
+      <Route path="/live/:roomId" element={<ExploreRooms />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
