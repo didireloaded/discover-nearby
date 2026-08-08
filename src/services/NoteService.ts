@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { AnalyticsAI } from "./ai/AnalyticsAI";
+import { FeedRanker } from "@/lib/recommendation/FeedRanker";
 
 export interface Note {
   id: string;
@@ -44,7 +45,8 @@ export const NoteService = {
         .limit(limit);
 
       if (error) throw error;
-      return data || [];
+      const rawNotes = data || [];
+      return FeedRanker.rankFeed(rawNotes as any, { location: "Windhoek" }) as Note[];
     } catch (err) {
       console.error("Failed to fetch feed notes:", err);
       return [];
