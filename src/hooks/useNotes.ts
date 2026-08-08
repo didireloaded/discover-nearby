@@ -52,9 +52,12 @@ export function useNotes(initialTab: "discover" | "following" = "discover") {
     durationSeconds?: number,
     waveformData?: number[],
   ) => {
-    const authorId = profile?.id || "demo-user-123";
+    if (!profile?.id) {
+      toast.error("Please sign in to publish notes");
+      return null;
+    }
     const newNote = await NoteService.createNote(
-      authorId,
+      profile.id,
       content,
       type,
       audioUrl,
@@ -74,9 +77,12 @@ export function useNotes(initialTab: "discover" | "following" = "discover") {
     durationSeconds?: number,
     waveformData?: number[],
   ) => {
-    const authorId = profile?.id || "demo-user-123";
+    if (!profile?.id) {
+      toast.error("Please sign in to publish notes");
+      return null;
+    }
     const newNote = await NoteService.createTemporaryNote(
-      authorId,
+      profile.id,
       content,
       type,
       audioUrl,
@@ -96,9 +102,12 @@ export function useNotes(initialTab: "discover" | "following" = "discover") {
     durationSeconds?: number,
     waveformData?: number[],
   ) => {
-    const authorId = profile?.id || "demo-user-123";
+    if (!profile?.id) {
+      toast.error("Please sign in to publish notes");
+      return null;
+    }
     const newNote = await NoteService.createPermanentNote(
-      authorId,
+      profile.id,
       content,
       type,
       audioUrl,

@@ -1,52 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Plus, MoreHorizontal, MessageSquare } from "lucide-react";
-import { useMessages } from "@/hooks/useMessages";
+import { useConversations } from "@/hooks/useMessages";
 import { PremiumEmptyState } from "@/components/common/PremiumEmptyState";
 import { SkeletonList } from "@/components/common/SkeletonLoader";
 
 export function Inbox() {
   const navigate = useNavigate();
-  const { conversations, isLoading } = useMessages();
+  const { conversations, isLoading } = useConversations();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const fallbackConversations = [
-    {
-      id: "conv-1",
-      name: "Maria Theodore",
-      avatar:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-      lastMessage: "See you at the acoustic live room session tonight!",
-      time: "2m",
-      unread: 2,
-      online: true,
-    },
-    {
-      id: "conv-2",
-      name: "Gazza Official",
-      avatar:
-        "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80",
-      lastMessage: "Thanks for sharing the voice note session link.",
-      time: "1h",
-      unread: 0,
-      online: false,
-    },
-    {
-      id: "conv-3",
-      name: "Lukas Shilongo",
-      avatar:
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
-      lastMessage: "Check out the new Swakopmund event notes!",
-      time: "1d",
-      unread: 0,
-      online: true,
-    },
-  ];
-
-  const activeConversations =
-    conversations && conversations.length > 0 ? conversations : fallbackConversations;
-
-  const filteredConversations = activeConversations.filter(
+  const filteredConversations = conversations.filter(
     (conv: any) =>
       conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()),

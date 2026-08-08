@@ -23,9 +23,14 @@ export function useConversations() {
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const activeUserId = session?.user?.id || profile?.id || "demo-user-123";
+  const activeUserId = session?.user?.id || profile?.id || "";
 
   const fetchConversations = useCallback(async () => {
+    if (!activeUserId) {
+      setConversations([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const data = await MessageService.getUserConversations(activeUserId);
@@ -49,10 +54,10 @@ export function useMessages(conversationId?: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const activeUserId = session?.user?.id || profile?.id || "demo-user-123";
+  const activeUserId = session?.user?.id || profile?.id || "";
 
   const fetchMessages = useCallback(async () => {
-    if (!conversationId) return;
+    if (!conversationId || !activeUserId) return;
     setIsLoading(true);
 
     try {
@@ -130,5 +135,17 @@ export function useMessages(conversationId?: string) {
     }
   };
 
-  return { messages, isLoading, sendMessage, refreshMessages: fetchMessages };
+  const sendMediaMessage = async (file: File, type: "image" | "voice") => {
+    if (!conversationId || !activeUserId) return false;
+    try {
+      await MessageService.sendMediaMessage(conversationId, activeUserId, file, type);
+      await fetchMessages();
+      return true;
+    } catch (err) {
+      console.error("Error sending media message:", err);
+      return false;
+    }
+  };
+
+  return { messages, isLoading, sendMessage, sendMediaMessage, refreshMessages: fetchMessages };
 }

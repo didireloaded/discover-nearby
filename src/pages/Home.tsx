@@ -1,127 +1,55 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, CheckCircle2, Radio, Mic } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { USERS } from "@/data/dummy";
-import { Avatar } from "@/components/common/Avatar";
-import { useAuth } from "@/contexts/AuthContext";
+import { Plus, Mic, Radio, Sparkles } from "lucide-react";
 import { useNotes } from "@/hooks/useNotes";
-import { StoryService } from "@/services/stories";
-import { CreateStoryModal } from "@/components/stories/CreateStoryModal";
-import { StoriesViewer } from "@/components/stories/StoriesViewer";
-import { CreateNoteModal } from "@/components/notes/CreateNoteModal";
-import { VoiceNoteRecorderModal } from "@/components/voice/VoiceNoteRecorderModal";
-import { CommentsModal } from "@/components/feed/CommentsModal";
 import { NoteCard } from "@/components/feed/NoteCard";
+import { StoryService } from "@/services/stories";
+import { Avatar } from "@/components/common/Avatar";
+import { SkeletonList } from "@/components/common/SkeletonLoader";
+import { CreateStoryModal } from "@/components/stories/CreateStoryModal";
+import { VoiceNoteRecorderModal } from "@/components/voice/VoiceNoteRecorderModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 export function Home() {
-  const { profile } = useAuth();
   const navigate = useNavigate();
-  const [feedTab, setFeedTab] = useState<"discover" | "following">("discover");
-  const [categoryFilter, setCategoryFilter] = useState<
-    "all" | "temporary" | "permanent" | "voice" | "events"
-  >("all");
-  const { notes, refreshNotes } = useNotes();
+  const { profile } = useAuth();
+  const { notes, loading, error, refreshNotes, feedTab, setFeedTab } = useNotes("discover");
+  const [subCategoryFilter, setSubCategoryFilter] = useState<string>("all");
   const [stories, setStories] = useState<any[]>([]);
-  const [isCreateStoryOpen, setIsCreateStoryOpen] = useState(false);
-  const [isCreateNoteOpen, setIsCreateNoteOpen] = useState(false);
+  const [liveRooms, setLiveRooms] = useState<any[]>([]);
+
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
   const [isVoiceRecorderOpen, setIsVoiceRecorderOpen] = useState(false);
-  const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
-  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    async function loadStories() {
+    async function loadData() {
       try {
-        const data = await StoryService.getFeedStories();
-        if (data && data.length > 0) {
-          setStories(data);
-        } else {
-          setStories(
-            USERS.map((user, i) => ({
-              id: `story-${user.id}`,
-              user_id: user.id,
-              profiles: {
-                display_name: user.name,
-                avatar_url: user.avatar,
-              },
-              media_url: user.avatar,
-              media_type: i % 2 === 0 ? "image" : "voice",
-              created_at: new Date(Date.now() - i * 3600000).toISOString(),
-            })),
-          );
-        }
+        const fetchedStories = await StoryService.getFeedStories();
+        setStories(fetchedStories || []);
+
+        const { data: rooms } = await supabase
+          .from("voice_rooms")
+          .select("*, profiles!voice_rooms_host_id_fkey(display_name, avatar_url, username)")
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        setLiveRooms(rooms || []);
       } catch (err) {
-        console.error("Failed to load stories", err);
+        console.error("Failed to load home feed stories/rooms", err);
       }
     }
-    loadStories();
+    loadData();
   }, []);
 
-  const discoverFeed = [
-    {
-      id: "disc-1",
-      author: "Maria Theodore",
-      username: "maria_theodore",
-      verified: true,
-      avatar: USERS[0].avatar,
-      videoBg:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80",
-      caption:
-        "Short scenes, deep emotions—each note carries a piece of something special under the Namibian sky. ✨",
-      likesCount: 452000,
-      bookmarksCount: 189000,
-      commentsCount: 102000,
-      type: "media",
-    },
-    {
-      id: "disc-2",
-      author: "Gazza Official",
-      username: "gazzamusic",
-      verified: true,
-      avatar: USERS[1].avatar,
-      videoBg:
-        "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80",
-      caption: "Live acoustic studio session in Windhoek. Join the voice room afterwards!",
-      likesCount: 328000,
-      bookmarksCount: 124000,
-      commentsCount: 86000,
-      type: "media",
-    },
-    {
-      id: "disc-3",
-      author: "Lukas Shilongo",
-      username: "lukas_vibe",
-      verified: false,
-      avatar: USERS[2].avatar,
-      videoBg:
-        "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80",
-      caption: "Swakopmund Sunset Jam Session — live voice notes dropping tonight",
-      likesCount: 215000,
-      bookmarksCount: 67000,
-      commentsCount: 42000,
-      type: "media",
-    },
-  ];
-
-  const followingFeed = [
-    {
-      id: "foll-1",
-      author: "Maria Theodore",
-      username: "maria_theodore",
-      verified: true,
-      avatar: USERS[0].avatar,
-      videoBg:
-        "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80",
-      caption:
-        "Exclusive update for my followers: New voice room session hosting tomorrow at 8 PM!",
-      likesCount: 184000,
-      bookmarksCount: 92000,
-      commentsCount: 34000,
-      type: "media",
-    },
-  ];
-
-  const activeFeed = feedTab === "discover" ? discoverFeed : followingFeed;
+  const filteredNotes = notes.filter((note) => {
+    if (subCategoryFilter === "all") return true;
+    if (subCategoryFilter === "24h") return note.note_kind === "temporary";
+    if (subCategoryFilter === "permanent") return note.note_kind === "permanent";
+    if (subCategoryFilter === "voice") return note.type === "voice";
+    return true;
+  });
 
   return (
     <div className="flex flex-col min-h-full pb-28 pt-1 bg-[#0B0A09] text-white">
@@ -138,7 +66,6 @@ export function Home() {
           >
             Discover
           </button>
-
           <button
             onClick={() => setFeedTab("following")}
             className={`pb-1 text-lg font-bold tracking-wide transition relative font-display ${
@@ -151,230 +78,180 @@ export function Home() {
           </button>
         </div>
 
-        {/* Quick Voice Note Action */}
         <button
           onClick={() => setIsVoiceRecorderOpen(true)}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFB800]/15 text-[#FFB800] border border-[#FFB800]/30 text-xs font-bold hover:bg-[#FFB800]/25 transition active:scale-95 shadow-md"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFB800] text-black text-xs font-bold shadow-md hover:bg-[#FFB800]/90 transition active:scale-95"
         >
-          <Mic size={14} className="text-[#FFB800]" />
+          <Mic size={14} />
           <span>Voice Note</span>
         </button>
       </div>
 
-      {/* 2. Sub-Category Filter Bar (All, 24h Notes, Permanent, Voice, Events) */}
-      <div className="px-5 mb-4 overflow-x-auto no-scrollbar flex items-center gap-2">
+      {/* 2. Sub-Category Filter Bar */}
+      <div className="px-5 mb-4 flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1">
         {[
-          { id: "all", label: "All" },
-          { id: "temporary", label: "24h Notes" },
+          { id: "all", label: "All Feed" },
+          { id: "24h", label: "24h Notes" },
           { id: "permanent", label: "Permanent" },
-          { id: "voice", label: "Voice" },
-          { id: "events", label: "Events" },
-        ].map((tab) => {
-          const isActive = categoryFilter === tab.id;
+          { id: "voice", label: "Voice Only" },
+        ].map((filter) => {
+          const isActive = subCategoryFilter === filter.id;
           return (
             <button
-              key={tab.id}
-              onClick={() => setCategoryFilter(tab.id as any)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap relative ${
+              key={filter.id}
+              onClick={() => setSubCategoryFilter(filter.id)}
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold shrink-0 transition active:scale-95 border ${
                 isActive
-                  ? "bg-[#FFB800] text-black shadow-md"
-                  : "bg-white/5 text-white/60 hover:text-white hover:bg-white/10"
+                  ? "bg-white text-black font-bold border-white"
+                  : "bg-white/5 text-white/70 border-white/10 hover:bg-white/10"
               }`}
             >
-              {tab.label}
+              {filter.label}
             </button>
           );
         })}
       </div>
 
-      {/* 3. Story Rail matching Blueprint */}
-      <div className="px-5 mb-4 overflow-x-auto no-scrollbar flex items-center gap-4 py-1">
-        {/* Your Story Tile */}
-        <button
-          onClick={() => setIsCreateStoryOpen(true)}
-          className="flex flex-col items-center gap-1.5 flex-shrink-0 group active:scale-95 transition"
-        >
-          <div className="relative h-[66px] w-[66px] rounded-full p-[2px] bg-gradient-to-tr from-[#FFB800] to-[#FF9D2E] flex items-center justify-center shadow-md">
-            <div className="h-full w-full rounded-full bg-[#0B0A09] flex items-center justify-center">
+      {/* 3. Stories Bar */}
+      <div className="px-5 mb-5 overflow-x-auto no-scrollbar py-1">
+        <div className="flex items-center gap-3">
+          {/* Add Story Button */}
+          <button
+            onClick={() => setIsStoryModalOpen(true)}
+            className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
+          >
+            <div className="relative h-16 w-16 rounded-[20px] bg-[#181513] border-2 border-dashed border-[#FFB800]/50 p-0.5 flex items-center justify-center group-hover:border-[#FFB800] transition">
               <Avatar
-                size={60}
-                profile={{
-                  id: profile?.id || "me",
-                  display_name: profile?.display_name || "You",
-                  avatar_url: profile?.avatar_url,
-                }}
+                size={56}
+                profile={
+                  profile
+                    ? {
+                        id: profile.id,
+                        display_name: profile.display_name,
+                        avatar_url: profile.avatar_url,
+                      }
+                    : undefined
+                }
+                className="w-full h-full rounded-[16px] object-cover opacity-70"
               />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-6 w-6 rounded-full bg-[#FFB800] text-black flex items-center justify-center shadow-lg">
+                  <Plus size={14} className="stroke-[3]" />
+                </div>
+              </div>
             </div>
-            <div className="absolute bottom-0 right-0 h-5.5 w-5.5 rounded-full bg-[#FFB800] text-black flex items-center justify-center border-2 border-[#0B0A09] shadow">
-              <Plus size={13} strokeWidth={3} />
-            </div>
-          </div>
-          <span className="text-[11px] font-semibold text-white/80 text-center truncate w-[68px]">
-            Add Story
-          </span>
-        </button>
+            <span className="text-[11px] font-semibold text-white/80">Your Story</span>
+          </button>
 
-        {/* Creator Stories */}
-        {stories.map((s, idx) => {
-          const author = s.profiles;
-          const authorName = author?.display_name || USERS[idx % USERS.length].name;
-          const firstName = authorName.split(" ")[0];
-
-          return (
+          {/* Real Stories Rail */}
+          {stories.map((story) => (
             <button
-              key={s.id}
-              onClick={() => setViewerIndex(idx)}
-              className="flex flex-col items-center gap-1.5 flex-shrink-0 group active:scale-95 transition"
+              key={story.id}
+              onClick={() => navigate(`/story/${story.id}`)}
+              className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
             >
-              <div className="relative h-[66px] w-[66px] rounded-full gold-story-ring shadow-md hover:scale-105 transition">
-                <Avatar
-                  size={61}
-                  profile={{
-                    id: s.user_id,
-                    display_name: authorName,
-                    avatar_url: author?.avatar_url || USERS[idx % USERS.length].avatar,
-                  }}
-                />
+              <div className="h-16 w-16 rounded-[20px] p-[2px] bg-gradient-to-tr from-[#FFB800] via-[#FF9D2E] to-amber-500 shadow-md">
+                <div className="h-full w-full rounded-[18px] bg-[#181513] p-0.5">
+                  <img
+                    src={
+                      story.media_url ||
+                      story.profiles?.avatar_url ||
+                      `https://api.dicebear.com/7.x/avataaars/svg?seed=${story.id}`
+                    }
+                    alt="Story"
+                    className="h-full w-full rounded-[16px] object-cover"
+                  />
+                </div>
               </div>
-              <div className="flex items-center gap-0.5 justify-center w-[68px]">
-                <span className="text-[11px] font-medium text-white/80 text-center truncate">
-                  {firstName}
-                </span>
-                <CheckCircle2 size={10} className="text-[#FFB800] shrink-0" />
-              </div>
+              <span className="text-[11px] font-semibold text-white/80 max-w-[64px] truncate">
+                {story.profiles?.display_name || story.profiles?.username || "Creator"}
+              </span>
             </button>
-          );
-        })}
-      </div>
-
-      {/* 4. Live Rooms Strip */}
-      <div className="px-5 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-[#FFB800] rounded-full shadow-[0_0_8px_#FFB800]" />
-            <span className="text-xs font-bold text-white tracking-wide uppercase font-display">
-              Live Rooms Right Now
-            </span>
-          </div>
-          <button
-            onClick={() => navigate("/rooms")}
-            className="text-[11px] font-bold text-[#FFB800] hover:underline"
-          >
-            View all
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-0.5">
-          <button
-            onClick={() => navigate("/rooms/demo-room-1")}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-[18px] bg-white/5 border border-white/10 hover:border-[#FFB800]/60 transition active:scale-95 flex-shrink-0"
-          >
-            <Radio size={15} className="text-[#FFB800] animate-pulse" />
-            <div className="text-left">
-              <div className="text-xs font-bold text-white truncate max-w-[140px]">
-                Afrobeats Only 🔥
-              </div>
-              <div className="text-[10px] text-white/60">34 listening • 2 singing</div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => navigate("/rooms/demo-room-1")}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-[18px] bg-white/5 border border-white/10 hover:border-[#FFB800]/60 transition active:scale-95 flex-shrink-0"
-          >
-            <Mic size={15} className="text-[#FFB800] animate-pulse" />
-            <div className="text-left">
-              <div className="text-xs font-bold text-white truncate max-w-[140px]">
-                Namibian Hits Jam
-              </div>
-              <div className="text-[10px] text-white/60">142 listening</div>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* 5. Unified Feed Stream */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`${feedTab}-${categoryFilter}`}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.2 }}
-          className="px-5 space-y-5 flex-1"
-        >
-          {/* Render Live Notes from DB when available */}
-          {notes && notes.length > 0 && (
-            <div className="space-y-4">
-              {notes.slice(0, 3).map((note) => (
-                <NoteCard key={note.id} note={note} onRefresh={refreshNotes} />
-              ))}
-            </div>
-          )}
-
-          {/* Render Tab Media Posts */}
-          {activeFeed.map((post) => (
-            <NoteCard
-              key={post.id}
-              note={
-                {
-                  id: post.id,
-                  user_id: post.id,
-                  content: post.caption,
-                  media_url: post.videoBg,
-                  type: "permanent",
-                  created_at: new Date().toISOString(),
-                  reaction_count: post.likesCount,
-                  reply_count: post.commentsCount,
-                  profiles: {
-                    username: post.username,
-                    display_name: post.author,
-                    avatar_url: post.avatar,
-                  },
-                } as any
-              }
-            />
           ))}
-        </motion.div>
-      </AnimatePresence>
+        </div>
+      </div>
 
-      {/* Modals & Viewers */}
-      {activeCommentsPostId && (
-        <CommentsModal postId={activeCommentsPostId} onClose={() => setActiveCommentsPostId(null)}>
-          <span className="hidden" />
-        </CommentsModal>
+      {/* 4. Active Live Rooms Section (If Any) */}
+      {liveRooms.length > 0 && (
+        <div className="px-5 mb-5 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-white/80">
+              <Radio size={14} className="text-[#FFB800] animate-pulse" />
+              <span>Live Voice Rooms</span>
+            </div>
+            <button
+              onClick={() => navigate("/rooms")}
+              className="text-[11px] text-[#FFB800] font-bold hover:underline"
+            >
+              See All
+            </button>
+          </div>
+          <div className="grid grid-cols-1 gap-2">
+            {liveRooms.map((room) => (
+              <button
+                key={room.id}
+                onClick={() => navigate(`/room/${room.id}`)}
+                className="flex items-center justify-between p-3 rounded-[18px] bg-[#181513] border border-white/10 hover:border-[#FFB800]/40 transition text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+                  <div>
+                    <p className="text-xs font-bold text-white">{room.title || "Voice Room"}</p>
+                    <p className="text-[10px] text-white/50">
+                      Host: {room.profiles?.display_name || "Creator"}
+                    </p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-[#FFB800] text-black text-[11px] font-bold">
+                  Join Stage
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
-      {isCreateStoryOpen && (
-        <CreateStoryModal open={isCreateStoryOpen} onClose={() => setIsCreateStoryOpen(false)} />
-      )}
+      {/* 5. Main Feed Notes Stream */}
+      <div className="px-5 space-y-4">
+        {loading ? (
+          <SkeletonList />
+        ) : error ? (
+          <div className="p-6 rounded-[22px] bg-[#181513] border border-red-500/20 text-center space-y-3">
+            <p className="text-xs font-bold text-red-400">Failed to connect to notes database</p>
+            <button
+              onClick={() => refreshNotes()}
+              className="px-4 py-1.5 rounded-full bg-white/10 text-white text-xs font-bold hover:bg-white/20"
+            >
+              Retry Connection
+            </button>
+          </div>
+        ) : filteredNotes.length === 0 ? (
+          <div className="p-8 rounded-[22px] bg-[#181513] border border-white/10 text-center space-y-3">
+            <Sparkles size={32} className="mx-auto text-[#FFB800]" />
+            <p className="text-sm font-bold text-white">No notes published yet</p>
+            <p className="text-xs text-white/50 max-w-[260px] mx-auto leading-relaxed">
+              Be the first to publish a 24-hour or permanent voice/text note in Windhoek!
+            </p>
+            <button
+              onClick={() => setIsVoiceRecorderOpen(true)}
+              className="px-5 py-2 rounded-full bg-[#FFB800] text-black text-xs font-bold shadow-md hover:bg-[#FFB800]/90 transition"
+            >
+              Record First Note
+            </button>
+          </div>
+        ) : (
+          filteredNotes.map((note) => <NoteCard key={note.id} note={note} />)
+        )}
+      </div>
 
-      {isCreateNoteOpen && (
-        <CreateNoteModal
-          open={isCreateNoteOpen}
-          onClose={() => setIsCreateNoteOpen(false)}
-          onSuccess={refreshNotes}
-          initialMode="text"
-        />
-      )}
-
-      {viewerIndex !== null && (
-        <StoriesViewer
-          stories={stories.map((s) => ({
-            id: s.id,
-            userId: s.user_id,
-            username: s.profiles?.display_name || "User",
-            userAvatar: s.profiles?.avatar_url || "",
-            mediaUrl: s.media_url,
-            mediaType: s.media_type as any,
-            content: { audioUrl: s.media_url },
-            timestamp: new Date(s.created_at).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          }))}
-          initialIndex={viewerIndex}
-          onClose={() => setViewerIndex(null)}
+      {/* Create Modals */}
+      {isStoryModalOpen && (
+        <CreateStoryModal
+          open={isStoryModalOpen}
+          onClose={() => {
+            setIsStoryModalOpen(false);
+            StoryService.getFeedStories().then((res) => setStories(res || []));
+          }}
         />
       )}
 
@@ -383,8 +260,8 @@ export function Home() {
           open={isVoiceRecorderOpen}
           onClose={() => setIsVoiceRecorderOpen(false)}
           onPublished={() => {
-            refreshNotes();
             setIsVoiceRecorderOpen(false);
+            refreshNotes();
           }}
           mode="note"
         />

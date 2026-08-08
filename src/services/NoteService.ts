@@ -226,28 +226,8 @@ export const NoteService = {
       AnalyticsAI.trackEvent(userId, "note_created", data?.id || "", { type, noteKind });
       return data;
     } catch (err) {
-      console.warn("Database insert note notice (using resilient fallback note):", err);
-
-      const fallbackNote: Note = {
-        id: `note-local-${Date.now()}`,
-        user_id: userId,
-        content: content || (type === "voice" ? "Voice Note" : "Note"),
-        type: type,
-        note_kind: noteKind,
-        created_at: new Date().toISOString(),
-        expires_at: expiresAt,
-        audio_url: audioUrl || undefined,
-        duration_seconds: durationSeconds || 5,
-        waveform_data: waveformData || [20, 40, 65, 80, 50, 30, 70, 90, 40, 20],
-        profiles: {
-          id: userId,
-          username: "you",
-          display_name: "You",
-          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
-        },
-      } as any;
-
-      return fallbackNote;
+      console.error("Database insert note error:", err);
+      throw err;
     }
   },
 

@@ -17,24 +17,9 @@ export function ChatRoom() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const activeUserId = user?.id || "me";
+  const activeUserId = user?.id || "";
 
-  const fallbackMessages = [
-    {
-      id: "m-1",
-      sender_id: "other",
-      content: "Hey! Excited for the live room acoustic session tonight?",
-      created_at: "10:42 AM",
-    },
-    {
-      id: "m-2",
-      sender_id: activeUserId,
-      content: "Yes! Dropping a new voice note preview right before we start.",
-      created_at: "10:44 AM",
-    },
-  ];
-
-  const activeMessages = messages.length > 0 ? messages : fallbackMessages;
+  const activeMessages = messages;
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -46,8 +31,9 @@ export function ChatRoom() {
     if (!input.trim()) return;
     const text = input.trim();
     setInput("");
-    const success = await sendMessage(text);
-    if (!success) {
+    try {
+      await sendMessage(text);
+    } catch {
       toast.error("Failed to send message");
     }
   };
@@ -62,12 +48,12 @@ export function ChatRoom() {
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    toast.info("Sending photo...");
+    toast.info("Uploading image to storage...");
     const success = await sendMediaMessage(file, "image");
     if (success) {
-      toast.success("Photo sent");
+      toast.success("Image sent and saved!");
     } else {
-      toast.error("Failed to send photo");
+      toast.error("Failed to upload and send image");
     }
   };
 
@@ -96,9 +82,12 @@ export function ChatRoom() {
             </p>
           </div>
           <button
-            onClick={() => toast.info("Voice call connecting...")}
+            onClick={() => {
+              toast.info("Direct call requires a Live Voice Room. Opening Audio Stage...");
+              navigate("/rooms");
+            }}
             className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition active:scale-95 text-white"
-            aria-label="Start voice call"
+            aria-label="Start voice room session"
           >
             <Phone className="w-4 h-4 text-white/80" />
           </button>
@@ -226,7 +215,7 @@ export function ChatRoom() {
             toast.success("Voice message sent!");
             setIsVoiceModalOpen(false);
           }}
-          mode="direct_message"
+          mode="message"
           recipientId={conversationId}
         />
       )}

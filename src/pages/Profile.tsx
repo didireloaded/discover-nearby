@@ -17,10 +17,11 @@ import {
 import { VoiceIntroPlayer } from "@/components/voice/VoiceIntroPlayer";
 import { VoiceNoteRecorderModal } from "@/components/voice/VoiceNoteRecorderModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFollow } from "@/hooks/useFollow";
 import { supabase } from "@/lib/supabase";
 import { Avatar } from "@/components/common/Avatar";
+import { NoteCard } from "@/components/feed/NoteCard";
 import { toast } from "sonner";
-import { USERS } from "@/data/dummy";
 
 export function Profile() {
   const { username } = useParams<{ username?: string }>();
@@ -29,31 +30,19 @@ export function Profile() {
 
   const [isVoicemailOpen, setIsVoicemailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"photo" | "subscription" | "reels" | "marked">(
-    "subscription",
+    "photo",
   );
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [userNotes, setUserNotes] = useState<any[]>([]);
+  const [followersCount, setFollowersCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const [isFollowing, setIsFollowing] = useState(true);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editBio, setEditBio] = useState("");
 
-  const handleSaveProfile = () => {
-    setUserProfile((prev: any) => ({
-      ...(prev || {}),
-      display_name: editName.trim() || profileData.display_name,
-      bio: editBio.trim() || profileData.bio,
-    }));
-    setIsEditModalOpen(false);
-    toast.success("Profile details updated successfully!");
-  };
-
-  const openEditModal = () => {
-    setEditName(profileData.display_name || "");
-    setEditBio(profileData.bio || "");
-    setIsEditModalOpen(true);
-  };
+  const targetId = userProfile?.id || currentUser?.id;
+  const { isFollowing, toggleFollow } = useFollow(targetId);
 
   const isOwnProfile =
     !username || username === currentUser?.username || username === currentUser?.id;
@@ -62,32 +51,38 @@ export function Profile() {
     async function loadProfileData() {
       setLoading(true);
       try {
+        let fetchedProf: any = null;
         if (isOwnProfile && currentUser) {
-          setUserProfile(currentUser);
-        } else {
-          const searchVal = username || "";
+          fetchedProf = currentUser;
+        } else if (username) {
           const { data } = await supabase
             .from("profiles")
             .select("*")
-            .or(`username.eq.${searchVal},id.eq.${searchVal}`)
+            .or(`username.eq.${username},id.eq.${username}`)
             .maybeSingle();
+          fetchedProf = data;
+        }
 
-          if (data) {
-            setUserProfile(data);
-          } else {
-            setUserProfile({
-              id: "budiartirohman",
-              display_name: "Budiarti Rohman",
-              username: "budiartirohman",
-              avatar_url: USERS[0].avatar,
-              bio: "🚀 Entrepreneur | Investor | Visionary\n🎨 Founder @Budiartidesign - Building the future\n🌐 Visit us: Budiartidesign.com",
-              location: "Windhoek, Namibia",
-              posts_count: "2.685",
-              followers_count: "1.2 Million",
-              views_count: "868K",
-              likes_count: "234K",
-            });
-          }
+        setUserProfile(fetchedProf);
+
+        const profId = fetchedProf?.id || currentUser?.id;
+        if (profId) {
+          // Fetch user notes
+          const { data: notesData } = await supabase
+            .from("notes")
+            .select(`*, profiles!notes_user_id_fkey(*)`)
+            .eq("user_id", profId)
+            .order("created_at", { ascending: false });
+
+          if (notesData) setUserNotes(notesData);
+
+          // Fetch followers count
+          const { count } = await supabase
+            .from("follows")
+            .select("*", { count: "exact", head: true })
+            .eq("following_id", profId);
+
+          if (count !== null) setFollowersCount(count);
         }
       } catch (err) {
         console.error("Error loading profile", err);
@@ -98,49 +93,66 @@ export function Profile() {
     loadProfileData();
   }, [username, currentUser, isOwnProfile]);
 
-  const profileData = userProfile || {
-    display_name: currentUser?.display_name || "Budiarti Rohman",
-    username: currentUser?.username || "budiartirohman",
-    avatar_url: currentUser?.avatar_url || USERS[0].avatar,
-    bio: "🚀 Entrepreneur | Investor | Visionary\n🎨 Founder @Budiartidesign - Building the future\n🌐 Visit us: Budiartidesign.com",
-    posts_count: "2.685",
-    followers_count: "1.2 Million",
-    views_count: "868K",
-    likes_count: "234K",
+  const handleSaveProfile = async () => {
+    const profId = userProfile?.id || currentUser?.id;
+    if (!profId) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          display_name: editName.trim(),
+          bio: editBio.trim(),
+        })
+        .eq("id", profId);
+
+      if (error) throw error;
+
+      setUserProfile((prev: any) => ({
+        ...(prev || {}),
+        display_name: editName.trim(),
+        bio: editBio.trim(),
+      }));
+      setIsEditModalOpen(false);
+      toast.success("Profile saved to database!");
+    } catch (err) {
+      console.error("Error saving profile to DB:", err);
+      toast.error("Failed to update profile in database");
+    }
   };
 
-  const showcaseMedia = [
-    {
-      id: "media-1",
-      url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80",
-      views: "1.2 M",
-    },
-    {
-      id: "media-2",
-      url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80",
-      views: "12 M",
-    },
-    {
-      id: "media-3",
-      url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80",
-      views: "6.8 M",
-    },
-    {
-      id: "media-4",
-      url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80",
-      views: "450K",
-    },
-    {
-      id: "media-5",
-      url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80",
-      views: "890K",
-    },
-    {
-      id: "media-6",
-      url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=600&q=80",
-      views: "2.4 M",
-    },
-  ];
+  const openEditModal = () => {
+    setEditName(profileData?.display_name || "");
+    setEditBio(profileData?.bio || "");
+    setIsEditModalOpen(true);
+  };
+
+  const profileData = userProfile || currentUser;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-white/50 text-xs">
+        Loading profile data...
+      </div>
+    );
+  }
+
+  if (!profileData && !currentUser) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-5 text-center text-white space-y-3">
+        <p className="text-sm font-bold text-white/70">Profile Not Found</p>
+        <p className="text-xs text-white/40">
+          Please sign in or select a valid Namibian creator profile.
+        </p>
+        <button
+          onClick={() => navigate("/auth")}
+          className="px-5 py-2 rounded-full bg-[#FFB800] text-black text-xs font-bold shadow-md"
+        >
+          Sign In
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-full pb-28 pt-3 bg-[#0B0A09] text-white">
@@ -201,7 +213,7 @@ export function Profile() {
             <div>
               <div className="flex items-center gap-1.5">
                 <h2 className="text-lg font-bold text-white tracking-tight truncate">
-                  {profileData.display_name}
+                  {profileData.display_name || profileData.username}
                 </h2>
                 <CheckCircle2 size={15} className="text-[#FFB800] fill-[#FFB800]/20 shrink-0" />
               </div>
@@ -221,12 +233,7 @@ export function Profile() {
               ) : (
                 <>
                   <button
-                    onClick={() => {
-                      setIsFollowing((prev) => !prev);
-                      toast.success(
-                        isFollowing ? "Unfollowed" : `Following @${profileData.username}`,
-                      );
-                    }}
+                    onClick={toggleFollow}
                     className={`px-4 py-1.5 rounded-full text-xs font-bold transition active:scale-95 ${
                       isFollowing
                         ? "bg-white/10 text-white/80 border border-white/20"
@@ -258,36 +265,34 @@ export function Profile() {
           </div>
         </div>
 
-        {/* 3. 4-Metric Engagement Bar (Posts, Followers, Views, Likes) */}
+        {/* 3. Real Engagement Bar (Posts, Followers, Views, Likes) */}
         <div className="grid grid-cols-4 items-center gap-1 py-3 px-3 rounded-[22px] bg-[#181513] border border-white/10 text-center">
           <div>
-            <p className="text-sm font-extrabold text-white">
-              {profileData.posts_count || "2.685"}
-            </p>
+            <p className="text-sm font-extrabold text-white">{userNotes.length}</p>
             <p className="text-[10px] text-white/50 font-medium">Posts</p>
           </div>
           <div>
-            <p className="text-sm font-extrabold text-white">
-              {profileData.followers_count || "1.2 Million"}
-            </p>
+            <p className="text-sm font-extrabold text-white">{followersCount}</p>
             <p className="text-[10px] text-white/50 font-medium">Followers</p>
           </div>
           <div>
-            <p className="text-sm font-extrabold text-white">{profileData.views_count || "868K"}</p>
+            <p className="text-sm font-extrabold text-white">0</p>
             <p className="text-[10px] text-white/50 font-medium">Views</p>
           </div>
           <div>
-            <p className="text-sm font-extrabold text-white">{profileData.likes_count || "234K"}</p>
+            <p className="text-sm font-extrabold text-white">0</p>
             <p className="text-[10px] text-white/50 font-medium">Likes</p>
           </div>
         </div>
 
-        {/* 4. Styled Bio Section */}
-        <div className="space-y-1.5 pt-1">
-          <p className="text-xs text-white/90 leading-relaxed font-normal whitespace-pre-line">
-            {profileData.bio}
-          </p>
-        </div>
+        {/* 4. Bio Section */}
+        {profileData.bio && (
+          <div className="space-y-1.5 pt-1">
+            <p className="text-xs text-white/90 leading-relaxed font-normal whitespace-pre-line">
+              {profileData.bio}
+            </p>
+          </div>
+        )}
 
         {/* Voice Intro Player */}
         <div className="pt-1">
@@ -302,7 +307,7 @@ export function Profile() {
         </div>
       </div>
 
-      {/* 5. Segmented Navigation Bar (Photo, Subscription, Reels, Marked) */}
+      {/* 5. Segmented Navigation Bar */}
       <div className="px-5 mt-5 border-b border-white/10">
         <div className="grid grid-cols-4 items-center text-center pb-2">
           {[
@@ -332,72 +337,44 @@ export function Profile() {
         </div>
       </div>
 
-      {/* 6. Media Showcase 3-Column Grid */}
+      {/* 6. Real Media / Notes Stream */}
       <div className="px-5 mt-4">
         {activeTab === "photo" && (
-          <div className="grid grid-cols-3 gap-2.5">
-            {showcaseMedia.map((item) => (
-              <div
-                key={item.id}
-                className="relative aspect-[3/4] rounded-[20px] overflow-hidden bg-black/40 border border-white/10 group cursor-pointer"
-              >
-                <img
-                  src={item.url}
-                  alt="Showcase media"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-[10px] font-bold">
-                  <Eye size={12} className="text-white/80" />
-                  <span>{item.views}</span>
-                </div>
+          <div className="space-y-4">
+            {userNotes.length > 0 ? (
+              userNotes.map((note) => <NoteCard key={note.id} note={note} />)
+            ) : (
+              <div className="text-center py-10 bg-[#181513] rounded-[22px] border border-white/10 space-y-2">
+                <Grid size={28} className="mx-auto text-white/30" />
+                <p className="text-xs font-bold text-white/70">No posts published yet</p>
+                <p className="text-[11px] text-white/40">
+                  Notes and posts created by this account will appear here.
+                </p>
               </div>
-            ))}
+            )}
           </div>
         )}
 
         {activeTab === "subscription" && (
-          <div className="grid grid-cols-3 gap-2.5">
-            {showcaseMedia.map((item) => (
-              <div
-                key={item.id}
-                className="relative aspect-[3/4] rounded-[20px] overflow-hidden bg-black/40 border border-white/10 group cursor-pointer"
-              >
-                <img
-                  src={item.url}
-                  alt="Showcase media"
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                <div className="absolute bottom-2 left-2 flex items-center gap-1 text-white text-[10px] font-bold">
-                  <Eye size={12} className="text-white/80" />
-                  <span>{item.views}</span>
-                </div>
-              </div>
-            ))}
+          <div className="text-center py-10 bg-[#181513] rounded-[22px] border border-white/10 space-y-2">
+            <Mic size={28} className="mx-auto text-white/30" />
+            <p className="text-xs font-bold text-white/70">No voice sessions recorded yet</p>
           </div>
         )}
 
         {activeTab === "reels" && (
-          <div className="space-y-3">
-            <div className="p-4 rounded-[22px] bg-[#181513] border border-[#FFB800]/30 flex items-center justify-between">
-              <div>
-                <h4 className="text-xs font-bold text-white">Windhoek Street Food Festival</h4>
-                <p className="text-[11px] text-white/60">Sat, Aug 30 • Independence Ave</p>
-              </div>
-              <span className="px-3.5 py-1.5 rounded-full bg-[#FFB800]/15 text-[#FFB800] text-[11px] font-bold border border-[#FFB800]/30">
-                RSVP
-              </span>
-            </div>
+          <div className="text-center py-10 bg-[#181513] rounded-[22px] border border-white/10 space-y-2">
+            <Calendar size={28} className="mx-auto text-white/30" />
+            <p className="text-xs font-bold text-white/70">No events hosted yet</p>
           </div>
         )}
 
         {activeTab === "marked" && (
-          <div className="space-y-3 text-center py-8 bg-[#181513] rounded-[22px] border border-white/10">
-            <Bookmark size={28} className="mx-auto text-[#FFB800] mb-2" />
-            <h4 className="text-sm font-bold text-white">Saved Library</h4>
-            <p className="text-xs text-white/50 max-w-xs mx-auto">
-              Notes and posts you bookmark will appear here privately.
+          <div className="text-center py-10 bg-[#181513] rounded-[22px] border border-white/10 space-y-2">
+            <Bookmark size={28} className="mx-auto text-[#FFB800]" />
+            <p className="text-xs font-bold text-white/70">Saved Library</p>
+            <p className="text-[11px] text-white/40">
+              Notes you bookmark will be stored here privately.
             </p>
           </div>
         )}
@@ -452,7 +429,7 @@ export function Profile() {
                 onClick={handleSaveProfile}
                 className="px-5 py-2 rounded-full bg-[#FFB800] text-black text-xs font-bold shadow-md active:scale-95 transition"
               >
-                Save Changes
+                Save to Database
               </button>
             </div>
           </div>
@@ -465,11 +442,11 @@ export function Profile() {
           open={isVoicemailOpen}
           onClose={() => setIsVoicemailOpen(false)}
           onPublished={() => {
-            toast.success(`Voicemail sent to @${profileData.username}!`);
+            toast.success(`Voicemail sent to @${profileData?.username || "user"}!`);
             setIsVoicemailOpen(false);
           }}
           mode="voicemail"
-          recipientId={profileData.id}
+          recipientId={profileData?.id}
         />
       )}
     </div>
