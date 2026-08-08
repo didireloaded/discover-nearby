@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Heart, MessageSquare, UserPlus, Radio, Calendar } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { routes } from "@/app/navigation";
 import { toast } from "sonner";
 import { SkeletonList } from "@/components/common/SkeletonLoader";
 
@@ -19,7 +20,7 @@ export function Notifications() {
       message: "Maria Theodore liked your voice note session",
       time: "10m ago",
       read: false,
-      deep_link: "/notes",
+      deep_link: routes.home(),
     },
     {
       id: "notif-2",
@@ -27,7 +28,7 @@ export function Notifications() {
       message: "Lukas Shilongo started following you",
       time: "1h ago",
       read: false,
-      deep_link: "/profile/lukas_vibe",
+      deep_link: routes.profile("lukas_vibe"),
     },
     {
       id: "notif-3",
@@ -35,7 +36,7 @@ export function Notifications() {
       message: "Gazza Official started a Live Voice Room in Windhoek",
       time: "2h ago",
       read: true,
-      deep_link: "/rooms",
+      deep_link: routes.rooms(),
     },
   ];
 
@@ -89,14 +90,14 @@ export function Notifications() {
     const destination =
       notif.deep_link ||
       (notif.type === "like" || notif.type === "comment"
-        ? `/note/${notif.related_id}`
+        ? routes.note(notif.related_id)
         : notif.type === "message"
-          ? `/messages/${notif.related_id}`
+          ? routes.conversation(notif.related_id)
           : notif.type === "follow"
-            ? `/profile/${notif.actor_id}`
+            ? routes.profile(notif.actor_id)
             : notif.type === "event"
-              ? `/event/${notif.related_id}`
-              : "/explore");
+              ? routes.event(notif.related_id)
+              : routes.explore());
 
     navigate(destination);
   };
@@ -104,17 +105,18 @@ export function Notifications() {
   const activeNotifs = realNotifs.length > 0 ? realNotifs : DEMO_NOTIFICATIONS;
 
   const getNotifIcon = (type: string) => {
-    if (type === "follow") return <UserPlus className="w-4 h-4" />;
-    if (type === "comment" || type === "message") return <MessageSquare className="w-4 h-4" />;
-    if (type === "room") return <Radio className="w-4 h-4" />;
-    if (type === "event") return <Calendar className="w-4 h-4" />;
-    return <Heart className="w-4 h-4" />;
+    if (type === "follow") return <UserPlus className="w-4 h-4 text-[#FFB800]" />;
+    if (type === "comment" || type === "message")
+      return <MessageSquare className="w-4 h-4 text-[#FFB800]" />;
+    if (type === "room") return <Radio className="w-4 h-4 text-[#FF493D]" />;
+    if (type === "event") return <Calendar className="w-4 h-4 text-[#FF9A3D]" />;
+    return <Heart className="w-4 h-4 text-[#FFB800]" />;
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0A09] text-white pb-28">
+    <div className="min-h-screen bg-[#090807] text-white pb-28">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#0B0A09] border-b border-white/[0.08] px-4 py-3">
+      <div className="sticky top-0 z-40 bg-[#090807] border-b border-white/10 px-5 py-3">
         <div className="flex items-center justify-between h-11">
           <h1 className="text-white font-bold text-xl tracking-wide font-display">Activity</h1>
           <button
@@ -127,7 +129,7 @@ export function Notifications() {
       </div>
 
       {/* Notifications List */}
-      <div className="px-4 space-y-1 pt-2">
+      <div className="px-5 space-y-1.5 pt-2">
         {loading ? (
           <SkeletonList />
         ) : (
@@ -142,24 +144,26 @@ export function Notifications() {
               : notif.time || "Recently";
 
             return (
-              <button
+              <div
                 key={notif.id}
                 onClick={() => handleNotificationClick(notif)}
-                className={`w-full flex items-start gap-3 py-3 px-3 rounded-2xl border-b border-white/[0.04] transition text-left cursor-pointer active:scale-[0.99] ${
-                  !isRead ? "bg-white/[0.04]" : "hover:bg-white/[0.02]"
+                className={`flex items-start gap-3.5 p-3.5 rounded-2xl transition cursor-pointer border ${
+                  isRead
+                    ? "bg-[#14110F] border-white/5 opacity-80"
+                    : "bg-[#1C1714] border-white/10 hover:border-white/20"
                 }`}
               >
-                <div className="w-9 h-9 rounded-full bg-[#FFB800]/15 text-[#FFB800] flex items-center justify-center flex-shrink-0 mt-0.5 border border-[#FFB800]/30">
+                <div className="w-9 h-9 rounded-full bg-[#14110F] flex items-center justify-center shrink-0 border border-white/10">
                   {getNotifIcon(notif.type)}
                 </div>
+
                 <div className="flex-1 min-w-0">
-                  <p className="text-white/90 text-xs leading-relaxed font-medium">{textContent}</p>
-                  <p className="text-white/40 text-[10px] mt-1 font-mono">{timeAgo}</p>
+                  <p className="text-xs text-white leading-relaxed">{textContent}</p>
+                  <span className="text-[10px] text-white/40 mt-1 block">{timeAgo}</span>
                 </div>
-                {!isRead && (
-                  <div className="w-2 h-2 bg-[#FFB800] rounded-full mt-2 flex-shrink-0" />
-                )}
-              </button>
+
+                {!isRead && <span className="w-2 h-2 rounded-full bg-[#FFB800] shrink-0 mt-2" />}
+              </div>
             );
           })
         )}

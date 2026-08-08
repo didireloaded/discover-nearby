@@ -5,6 +5,7 @@ import { User, Phone, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/Button";
+import { routes } from "@/app/navigation";
 
 export function Auth() {
   const [authMethod, setAuthMethod] = useState<"phone" | "email">("phone");
@@ -41,7 +42,7 @@ export function Auth() {
         });
         if (error) throw error;
         toast.success("Phone verified! Welcome to Matisa.");
-        navigate("/");
+        navigate(routes.home());
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to send SMS OTP code");
@@ -61,70 +62,44 @@ export function Auth() {
           email,
           password,
         });
-        if (error) {
-          if (error.message === "Invalid login credentials") {
-            throw new Error("Invalid login credentials. Have you confirmed your email address?");
-          }
-          throw error;
-        }
-        toast.success("Welcome back!");
-        navigate("/");
+        if (error) throw error;
+        toast.success("Welcome back to Matisa!");
       } else {
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
         });
         if (error) throw error;
-
-        if (data.user && !data.session) {
-          toast.success("Account created! Please check your email to confirm your account.");
-        } else {
-          toast.success("Account created! Welcome to Matisa.");
-          navigate("/");
-        }
+        toast.success("Account created! Check your email for verification.");
       }
+      navigate(routes.home());
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message || "Authentication failed");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGuest = () => {
-    localStorage.setItem("guestMode", "true");
-    toast.info("Browsing as Guest");
-    navigate("/");
+  const handleGuestLogin = () => {
+    toast.info("Browsing as guest");
+    navigate(routes.home());
   };
 
   return (
-    <div className="relative min-h-[100dvh] w-full bg-[var(--color-background)] text-white overflow-y-auto no-scrollbar flex flex-col font-sans py-6">
-      {/* Header */}
-      <div className="relative z-10 flex items-center justify-between px-6 pt-10">
-        <div className="w-10 h-10 bg-[var(--color-surface-2)] rounded-xl flex items-center justify-center transform rotate-45 shadow-lg border border-[var(--color-border)]">
-          <div className="w-4 h-4 bg-white rounded-sm transform -rotate-45" />
-        </div>
-
-        <button
-          onClick={() => setIsLogin(!isLogin)}
-          className="flex items-center gap-2 text-sm font-bold text-[var(--color-text-muted)] hover:text-white transition-colors"
-        >
-          <User className="w-4 h-4" />
-          {isLogin ? "Sign Up" : "Sign In"}
-        </button>
-      </div>
-
-      <div className="relative z-10 flex-1 flex flex-col justify-center px-6 -mt-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-display font-bold tracking-tight mb-2">
-            {isLogin ? "Welcome back" : "Create account"}
-          </h1>
-          <p className="text-[var(--color-text-muted)] text-sm font-medium">
-            Join the Namibian social network for audio & stories.
+    <div className="min-h-screen bg-[#090807] flex flex-col items-center justify-center p-6 text-white">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-3xl bg-[#FFB800] text-black font-extrabold text-2xl shadow-xl font-display mb-2">
+            M
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white font-display">Matisa</h1>
+          <p className="text-white/60 text-xs font-medium max-w-[260px] mx-auto">
+            The Namibian consumer social platform for Notes, Stories & Voice.
           </p>
         </div>
 
         {/* Auth Method Switcher (Phone vs Email) */}
-        <div className="flex rounded-2xl bg-white/5 p-1 mb-6 border border-white/10">
+        <div className="flex rounded-2xl bg-[#14110F] p-1 border border-white/10">
           <button
             type="button"
             onClick={() => {
@@ -154,88 +129,94 @@ export function Auth() {
           </button>
         </div>
 
-        <form onSubmit={handleAuth} className="space-y-4">
-          {authMethod === "phone" ? (
-            <>
-              {!otpSent ? (
-                <div className="relative">
-                  <span className="absolute left-4 top-4 text-sm font-bold text-white/50">
-                    +264
-                  </span>
+        <div className="p-6 rounded-[24px] bg-[#1C1714] border border-white/10 shadow-2xl">
+          <form onSubmit={handleAuth} className="space-y-4">
+            {authMethod === "phone" ? (
+              <>
+                {!otpSent ? (
+                  <div className="relative">
+                    <span className="absolute left-4 top-3.5 text-xs font-bold text-white/50">
+                      +264
+                    </span>
+                    <Input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="81 123 4567"
+                      required
+                      className="h-12 pl-16 rounded-xl bg-[#14110F] border border-white/10 text-white text-xs font-bold focus:border-[#FFB800]"
+                    />
+                  </div>
+                ) : (
                   <Input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="81 123 4567"
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    placeholder="Enter 6-digit SMS OTP"
                     required
-                    className="h-14 pl-16 rounded-2xl bg-[#181513] border-transparent text-white font-bold"
+                    className="h-12 rounded-xl bg-[#14110F] border border-white/10 text-white text-xs font-bold text-center tracking-widest focus:border-[#FFB800]"
                   />
-                </div>
-              ) : (
+                )}
+              </>
+            ) : (
+              <>
                 <Input
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="Enter 6-digit SMS OTP"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter email"
                   required
-                  maxLength={6}
-                  className="h-14 rounded-2xl bg-[#181513] border-transparent text-center text-lg tracking-widest font-bold text-white"
+                  className="h-12 rounded-xl bg-[#14110F] border border-white/10 text-white text-xs font-medium focus:border-[#FFB800]"
                 />
-              )}
-            </>
-          ) : (
-            <>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address"
-                required
-                className="h-14 rounded-2xl bg-[#181513] border-transparent"
-              />
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                required
-                className="h-14 rounded-2xl bg-[#181513] border-transparent"
-              />
-            </>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter password"
+                  required
+                  className="h-12 rounded-xl bg-[#14110F] border border-white/10 text-white text-xs font-medium focus:border-[#FFB800]"
+                />
+              </>
+            )}
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-12 rounded-xl bg-[#FFB800] text-black font-bold text-xs hover:bg-[#FFB800]/90 shadow-md transition active:scale-95"
+            >
+              {loading
+                ? "Processing..."
+                : authMethod === "phone"
+                  ? otpSent
+                    ? "Verify OTP & Sign In"
+                    : "Send SMS OTP"
+                  : isLogin
+                    ? "Sign In"
+                    : "Create Account"}
+            </Button>
+          </form>
+
+          {authMethod === "email" && (
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-xs text-[#FFB800] hover:underline font-semibold"
+              >
+                {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}
+              </button>
+            </div>
           )}
-
-          <Button
-            variant="primary"
-            disabled={loading}
-            className="w-full h-14 rounded-2xl font-bold text-base mt-4 bg-[#FFB800] text-black hover:bg-[#FFB800]/90 shadow-md"
-          >
-            {loading
-              ? "Please wait..."
-              : authMethod === "phone"
-                ? otpSent
-                  ? "Verify & Sign In"
-                  : "Send SMS Code"
-                : isLogin
-                  ? "Sign In"
-                  : "Sign Up"}
-          </Button>
-        </form>
-
-        <div className="mt-6 flex items-center gap-4">
-          <div className="h-px bg-[var(--color-border)] flex-1" />
-          <span className="text-[var(--color-text-muted)] text-xs font-bold uppercase tracking-wider">
-            Or
-          </span>
-          <div className="h-px bg-[var(--color-border)] flex-1" />
         </div>
 
-        <Button
-          variant="glass"
-          onClick={handleGuest}
-          className="w-full h-14 rounded-2xl font-bold mt-6 border border-white/20"
-        >
-          Continue as Guest
-        </Button>
+        <div className="text-center pt-2">
+          <button
+            onClick={handleGuestLogin}
+            className="text-xs text-white/50 hover:text-white transition font-medium"
+          >
+            Continue as Guest →
+          </button>
+        </div>
       </div>
     </div>
   );

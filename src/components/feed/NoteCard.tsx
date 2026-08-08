@@ -1,16 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import {
-  Heart,
-  MessageCircle,
-  Bookmark,
-  Share2,
-  Play,
-  Pause,
-  Radio,
-  CheckCircle2,
-  MoreHorizontal,
-  FileText,
-} from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, Play, Pause, Radio, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Avatar } from "@/components/common/Avatar";
@@ -18,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { reactionService } from "@/features/reactions";
 import { useSaves } from "@/hooks/useSaves";
 import { CommentsModal } from "@/components/feed/CommentsModal";
+import { routes } from "@/app/navigation";
 import type { Note } from "@/services/NoteService";
 
 interface NoteCardProps {
@@ -34,7 +24,6 @@ export function NoteCard({ note }: NoteCardProps) {
   // Reaction (Like) state
   const [likesCount, setLikesCount] = useState<number>(note.reaction_count || 0);
   const [isLiked, setIsLiked] = useState<boolean>(false);
-  const [likeLoading, setLikeLoading] = useState<boolean>(false);
 
   // Save state
   const { toggleSave, checkIsSaved } = useSaves();
@@ -81,73 +70,37 @@ export function NoteCard({ note }: NoteCardProps) {
     };
   }, [note.id, profile?.id, checkIsSaved]);
 
-  // Audio setup for voice notes
-  useEffect(() => {
-    if (note.type === "voice" && note.audio_url && !audioRef.current) {
-      const audio = new Audio(note.audio_url);
-      audio.addEventListener("timeupdate", () => {
-        if (audio.duration) {
-          setProgress((audio.currentTime / audio.duration) * 100);
-        }
-      });
-      audio.addEventListener("ended", () => {
-        setIsPlaying(false);
-        setProgress(0);
-      });
-      audioRef.current = audio;
-    }
-
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, [note.type, note.audio_url]);
-
   const handleLikeToggle = async () => {
-    if (!profile) return requireAuth();
-    if (likeLoading) return;
+    requireAuth(async () => {
+      const nextLiked = !isLiked;
+      setIsLiked(nextLiked);
+      setLikesCount((prev) => (nextLiked ? prev + 1 : Math.max(0, prev - 1)));
 
-    setLikeLoading(true);
-    const nextLiked = !isLiked;
-    setIsLiked(nextLiked);
-    setLikesCount((prev) => (nextLiked ? prev + 1 : Math.max(0, prev - 1)));
-
-    try {
-      await reactionService.toggleReaction(
-        {
-          userId: profile.id,
-          targetType: "note",
-          targetId: note.id,
-          reactionType: "heart",
-        },
-        isLiked ? "heart" : null,
-      );
-    } catch (err) {
-      console.error("Like failed:", err);
-      setIsLiked(!nextLiked);
-      setLikesCount((prev) => (!nextLiked ? prev + 1 : Math.max(0, prev - 1)));
-      toast.error("Could not update reaction");
-    } finally {
-      setLikeLoading(false);
-    }
+      try {
+        await reactionService.toggle("note", note.id, "heart", profile!.id);
+      } catch (err) {
+        console.error("Failed to toggle reaction:", err);
+        setIsLiked(!nextLiked);
+        setLikesCount((prev) => (!nextLiked ? prev + 1 : Math.max(0, prev - 1)));
+        toast.error("Could not save reaction");
+      }
+    });
   };
 
   const handleSaveToggle = async () => {
-    if (!profile) return requireAuth();
-
-    const nextSaved = !isSaved;
-    setIsSaved(nextSaved);
-    setSavesCount((prev) => (nextSaved ? prev + 1 : Math.max(0, prev - 1)));
-    const success = await toggleSave(note.id, isSaved);
-    if (!success) {
-      setIsSaved(!nextSaved);
-      setSavesCount((prev) => (!nextSaved ? prev + 1 : Math.max(0, prev - 1)));
-      toast.error("Could not save Note");
-    } else {
-      toast.success(nextSaved ? "Note saved to library" : "Note removed from saved");
-    }
+    requireAuth(async () => {
+      const nextSaved = !isSaved;
+      setIsSaved(nextSaved);
+      setSavesCount((prev) => (nextSaved ? prev + 1 : Math.max(0, prev - 1)));
+      const success = await toggleSave(note.id, isSaved);
+      if (!success) {
+        setIsSaved(!nextSaved);
+        setSavesCount((prev) => (!nextSaved ? prev + 1 : Math.max(0, prev - 1)));
+        toast.error("Could not save Note");
+      } else {
+        toast.success(nextSaved ? "Note saved to library" : "Note removed from saved");
+      }
+    });
   };
 
   const toggleAudioPlayback = async () => {
@@ -169,7 +122,7 @@ export function NoteCard({ note }: NoteCardProps) {
   };
 
   const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/note/${note.id}`;
+    const shareUrl = `${window.location.origin}${routes.note(note.id)}`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -181,37 +134,48 @@ export function NoteCard({ note }: NoteCardProps) {
         // User cancelled share
       }
     } else {
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success("Note link copied to clipboard!");
+      navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copied to clipboard!");
     }
   };
 
-  const formatK = (num: number) => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
-    if (num >= 1000) return (num / 1000).toFixed(num >= 10000 ? 0 : 1) + "K";
-    return num.toLocaleString();
-  };
-
   const authorName = note.profiles?.display_name || note.profiles?.username || "Creator";
-  const authorUsername = note.profiles?.username || "user";
-  const waveformBars = note.waveform_data?.length
-    ? note.waveform_data
-    : [35, 60, 40, 80, 100, 50, 75, 90, 45, 65, 85, 30, 70, 95, 40, 60];
+  const authorHandle = note.profiles?.username || "creator";
+  const timeAgo = getTimeAgo(note.created_at);
 
-  const timeAgoText = note.created_at
-    ? new Date(note.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    : "Just now";
+  const waveformBars = [
+    30, 45, 60, 80, 40, 90, 75, 50, 85, 95, 65, 40, 80, 70, 85, 60, 40, 75, 90, 60,
+  ];
 
   return (
-    <div className="w-full rounded-2xl bg-[#181513] p-4 border border-white/10 space-y-3">
-      {/* 1. Clean Author Header */}
-      <div className="flex items-center justify-between gap-3">
+    <article className="w-full bg-[#1C1714] rounded-[24px] border border-white/10 p-4 space-y-3 shadow-xl transition-all">
+      {/* Hidden Audio element for voice playback */}
+      {note.audio_url && (
+        <audio
+          ref={audioRef}
+          src={note.audio_url}
+          onEnded={() => {
+            setIsPlaying(false);
+            setProgress(0);
+          }}
+          onTimeUpdate={() => {
+            if (audioRef.current) {
+              const current = audioRef.current.currentTime;
+              const total = audioRef.current.duration || 1;
+              setProgress((current / total) * 100);
+            }
+          }}
+        />
+      )}
+
+      {/* 1. Header: Author & Metadata */}
+      <div className="flex items-center justify-between">
         <div
-          onClick={() => navigate(`/profile/${authorUsername}`)}
-          className="flex items-center gap-2.5 cursor-pointer group min-w-0"
+          onClick={() => navigate(routes.profile(authorHandle))}
+          className="flex items-center gap-3 cursor-pointer group min-w-0"
         >
           <Avatar
-            size={36}
+            size={40}
             profile={{
               id: authorId,
               display_name: authorName,
@@ -220,33 +184,31 @@ export function NoteCard({ note }: NoteCardProps) {
             className="rounded-full shrink-0"
           />
           <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-1 min-w-0">
-              <span className="text-xs font-bold text-white truncate group-hover:text-[#FFB800] transition">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-xs font-bold text-white leading-tight truncate group-hover:text-[#FFB800] transition">
                 {authorName}
               </span>
-              <CheckCircle2 size={12} className="text-[#FFB800] shrink-0" />
             </div>
-            <span className="text-[11px] text-white/50 truncate">
-              @{authorUsername} · {timeAgoText}
+            <span className="text-[11px] text-white/50 leading-none mt-0.5 truncate">
+              @{authorHandle} • {timeAgo}
             </span>
           </div>
         </div>
 
-        <button
-          onClick={() => toast.info("Options menu")}
-          className="w-8 h-8 flex items-center justify-center text-white/50 hover:text-white transition active:scale-95 shrink-0"
-          aria-label="More options"
-        >
-          <MoreHorizontal size={18} />
-        </button>
+        {/* Temporary / Permanent Badge */}
+        {note.note_kind === "temporary" && (
+          <span className="px-2 py-0.5 rounded-full bg-[#FFB800]/15 text-[#FFB800] text-[10px] font-bold">
+            24h Note
+          </span>
+        )}
       </div>
 
-      {/* 2. Content / Media */}
+      {/* 2. Media or Text Content */}
       <div className="space-y-3">
-        {(note as any).media_url ? (
-          <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-black/40 border border-white/10">
+        {note.media_url ? (
+          <div className="relative rounded-2xl overflow-hidden bg-black/40 border border-white/5 max-h-96">
             <img
-              src={(note as any).media_url}
+              src={note.media_url}
               alt="Note attachment"
               className="w-full h-full object-cover"
             />
@@ -270,7 +232,7 @@ export function NoteCard({ note }: NoteCardProps) {
         {note.type === "voice" && (
           <div className="space-y-2">
             {note.audio_url && (
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#14110F] border border-white/10">
                 <button
                   onClick={toggleAudioPlayback}
                   className="w-9 h-9 flex shrink-0 items-center justify-center rounded-full bg-[#FFB800] text-black shadow-md active:scale-95 transition"
@@ -306,7 +268,7 @@ export function NoteCard({ note }: NoteCardProps) {
             )}
 
             {note.transcript && (
-              <div className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white/80 space-y-0.5">
+              <div className="px-3 py-2 rounded-xl bg-[#14110F] border border-white/10 text-xs text-white/80 space-y-0.5">
                 <div className="flex items-center gap-1 text-[10px] font-bold text-[#FFB800] uppercase tracking-wider">
                   <FileText size={11} /> Transcript
                 </div>
@@ -317,7 +279,7 @@ export function NoteCard({ note }: NoteCardProps) {
         )}
       </div>
 
-      {/* 3. Naked Reaction Bar */}
+      {/* 3. Naked Action Bar */}
       <div className="flex items-center justify-between pt-2 border-t border-white/5">
         <div className="flex items-center gap-5">
           {/* Heart / Like */}
@@ -373,36 +335,52 @@ export function NoteCard({ note }: NoteCardProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              navigate("/rooms");
+              navigate(routes.rooms());
             }}
             className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FFB800]/10 text-[#FFB800] text-[11px] font-bold hover:bg-[#FFB800]/20 transition active:scale-95"
           >
             <Radio size={11} />
-            <span>Live</span>
+            <span>Stage</span>
           </button>
 
           <button
             onClick={handleShare}
-            className="w-8 h-8 flex items-center justify-center text-white/70 hover:text-white transition active:scale-95"
-            aria-label="Share"
+            className="p-1.5 rounded-full text-white/60 hover:text-white transition active:scale-95"
+            aria-label="Share note"
           >
             <Share2 size={16} />
           </button>
         </div>
       </div>
 
-      {/* Comments Modal */}
+      {/* 4. Comments Bottom Sheet */}
       {isCommentsOpen && (
         <CommentsModal
           postId={note.id}
-          onCommentCountChange={(delta) => setCommentsCount((prev) => Math.max(0, prev + delta))}
           onClose={() => setIsCommentsOpen(false)}
+          onCommentCountChange={(delta) => setCommentsCount((prev) => Math.max(0, prev + delta))}
         >
-          <span className="hidden" />
+          <span />
         </CommentsModal>
       )}
-    </div>
+    </article>
   );
 }
 
-export default NoteCard;
+function getTimeAgo(dateString?: string): string {
+  if (!dateString) return "just now";
+  const diff = Date.now() - new Date(dateString).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function formatK(num: number): string {
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+  if (num >= 1000) return (num / 1000).toFixed(1) + "k";
+  return num.toString();
+}

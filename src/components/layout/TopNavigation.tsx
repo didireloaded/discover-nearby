@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Headphones, Heart, MessageCircle, MapPin, ChevronDown, Check, X } from "lucide-react";
+import { Headphones, Heart, MessageCircle, ChevronDown, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar } from "@/components/common/Avatar";
+import { routes } from "@/app/navigation";
 import { toast } from "sonner";
 
 const NAMIBIAN_CITIES = [
@@ -31,19 +32,18 @@ export function TopNavigation() {
   };
 
   const displayName = profile?.display_name || profile?.username || "Guest User";
-  const username = profile?.username || "user";
 
   return (
     <>
       <header
-        className="sticky top-0 z-40 flex items-center justify-between px-5 pb-2 bg-[#0B0A09]"
+        className="sticky top-0 z-40 flex items-center justify-between px-5 pb-2 bg-[#090807]"
         style={{
           paddingTop: "calc(12px + env(safe-area-inset-top))",
         }}
       >
         {/* 1. Left Action: User Identity */}
         <div
-          onClick={() => navigate("/profile")}
+          onClick={() => navigate(routes.profile())}
           className="flex items-center gap-2.5 cursor-pointer group hover:opacity-90 transition min-w-0"
         >
           <Avatar
@@ -53,10 +53,10 @@ export function TopNavigation() {
               display_name: displayName,
               avatar_url: profile?.avatar_url,
             }}
-            className="rounded-full"
+            className="rounded-full shrink-0"
           />
           <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold text-white leading-tight truncate">
+            <span className="text-sm font-bold text-white leading-tight truncate font-display">
               {displayName}
             </span>
             <div className="flex items-center gap-1">
@@ -77,7 +77,7 @@ export function TopNavigation() {
         {/* 2. Right Actions: Naked Icons with 44px hit targets */}
         <div className="flex items-center gap-1 shrink-0">
           <button
-            onClick={() => navigate("/rooms")}
+            onClick={() => navigate(routes.rooms())}
             className="w-11 h-11 flex items-center justify-center text-white/70 hover:text-white transition active:scale-95"
             aria-label="Rooms"
             title="Rooms"
@@ -86,7 +86,7 @@ export function TopNavigation() {
           </button>
 
           <button
-            onClick={() => navigate("/activity")}
+            onClick={() => navigate(routes.activity())}
             className="w-11 h-11 flex items-center justify-center text-white/70 hover:text-white transition active:scale-95"
             aria-label="Activity"
             title="Activity"
@@ -95,7 +95,7 @@ export function TopNavigation() {
           </button>
 
           <button
-            onClick={() => navigate("/messages")}
+            onClick={() => navigate(routes.inbox())}
             className="relative w-11 h-11 flex items-center justify-center text-white/70 hover:text-white transition active:scale-95"
             aria-label="Messages"
             title="Messages"
@@ -108,13 +108,10 @@ export function TopNavigation() {
 
       {/* City Selector Modal */}
       {isCityModalOpen && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-xs rounded-2xl p-5 bg-[#181513] text-white border border-white/10 shadow-xl">
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <MapPin size={16} className="text-[#FFB800]" />
-                <h3 className="text-sm font-bold">Select Your City</h3>
-              </div>
+        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-sm rounded-2xl p-5 bg-[#1C1714] text-white border border-white/10 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <h3 className="text-sm font-bold font-display">Select Location</h3>
               <button
                 onClick={() => setIsCityModalOpen(false)}
                 className="p-1 text-white/50 hover:text-white"
@@ -123,24 +120,21 @@ export function TopNavigation() {
               </button>
             </div>
 
-            <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
-              {NAMIBIAN_CITIES.map((city) => {
-                const isSelected = city === selectedCity;
-                return (
-                  <button
-                    key={city}
-                    onClick={() => handleSelectCity(city)}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
-                      isSelected
-                        ? "bg-[#FFB800] text-black font-bold"
-                        : "hover:bg-white/10 text-white/80"
-                    }`}
-                  >
-                    <span>{city}, Namibia</span>
-                    {isSelected && <Check size={14} />}
-                  </button>
-                );
-              })}
+            <div className="space-y-1 max-h-60 overflow-y-auto pr-1">
+              {NAMIBIAN_CITIES.map((city) => (
+                <button
+                  key={city}
+                  onClick={() => handleSelectCity(city)}
+                  className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs text-left transition ${
+                    selectedCity === city
+                      ? "bg-[#FFB800] text-black font-bold"
+                      : "text-white/80 hover:bg-white/5"
+                  }`}
+                >
+                  <span>{city}, Namibia</span>
+                  {selectedCity === city && <Check size={14} />}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -148,5 +142,3 @@ export function TopNavigation() {
     </>
   );
 }
-
-export default TopNavigation;

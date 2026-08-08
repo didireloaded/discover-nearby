@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { NoteService } from "@/services/NoteService";
 import { VoiceNoteRecorderModal } from "@/components/voice/VoiceNoteRecorderModal";
 import { CreateStoryModal } from "@/components/stories/CreateStoryModal";
+import { routes } from "@/app/navigation";
 
 interface CreateSheetProps {
   open: boolean;
@@ -64,230 +65,188 @@ export function CreateSheet({ open, onClose }: CreateSheetProps) {
     };
   }, [open]);
 
-  if (!open) return null;
-
-  const handleCreateNote = async () => {
-    if (!profile) return requireAuth();
+  const handleCreateTextNote = async () => {
     if (!noteContent.trim()) {
-      toast.error("Please write something in your note");
+      toast.error("Please enter some text for your note");
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const result =
-        noteKind === "temporary"
-          ? await NoteService.createTemporaryNote(profile.id, noteContent.trim())
-          : await NoteService.createPermanentNote(profile.id, noteContent.trim());
-      if (result) {
+    requireAuth(async () => {
+      setIsSubmitting(true);
+      try {
+        if (noteKind === "temporary") {
+          await NoteService.createTemporaryNote(noteContent.trim());
+        } else {
+          await NoteService.createPermanentNote(noteContent.trim());
+        }
+
         toast.success(
           noteKind === "temporary"
-            ? "Temporary 24h Note published! 🚀"
-            : "Permanent Note published! 📌",
+            ? "24-hour Temporary Note posted!"
+            : "Permanent Note published to feed!",
         );
+
         setNoteContent("");
-        setLevel("root");
         onClose();
-      } else {
-        toast.error("Could not publish Note");
+        navigate(routes.home());
+      } catch (err) {
+        console.error("Failed to post note:", err);
+        toast.error("Could not post Note");
+      } finally {
+        setIsSubmitting(false);
       }
-    } catch (err) {
-      console.error("Error creating note:", err);
-      toast.error("Failed to publish Note");
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   };
+
+  if (!open) return null;
 
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/70 backdrop-blur-sm">
-        {/* Backdrop overlay touch to close */}
-        <div className="absolute inset-0" onClick={onClose} />
-
+      <div className="fixed inset-0 z-[150] flex items-end justify-center">
+        {/* Overlay Backdrop */}
         <motion.div
-          initial={{ y: "100%", opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: "100%", opacity: 0 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="relative z-10 w-full max-w-[430px] max-h-[calc(100dvh-12px)] overflow-y-auto overscroll-contain pb-[calc(24px+env(safe-area-inset-bottom))] rounded-t-[32px] glass-panel-elevated p-6 border-t border-white/20 shadow-2xl backdrop-blur-2xl bg-[#06101D]/95 text-white no-scrollbar"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+        />
+
+        {/* Bottom Sheet Container */}
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 28, stiffness: 300 }}
+          className="relative w-full max-w-[430px] rounded-t-[28px] bg-[#1C1714] border-t border-white/10 p-5 shadow-2xl text-white z-10"
         >
-          {/* Centered Drag Handle */}
-          <div className="flex justify-center mb-4">
-            <div className="h-1.5 w-12 rounded-full bg-white/20" />
-          </div>
-
-          {/* Header Bar */}
-          <div className="flex items-center justify-between mb-5">
-            {level !== "root" ? (
-              <button
-                onClick={() => setLevel("root")}
-                className="flex h-8 w-8 items-center justify-center rounded-full glass-panel text-white/80 hover:text-white"
-              >
-                <ArrowLeft size={16} />
-              </button>
-            ) : (
-              <div className="w-8" />
-            )}
-
-            <h2 className="text-base font-bold text-white tracking-wide text-center flex-1">
-              {level === "root" && "Create on Matisa"}
-              {level === "note-type" && "Select Note Type"}
-              {level === "note-composer" &&
-                (noteKind === "temporary" ? "Temporary Note (24h)" : "Permanent Note")}
-              {level === "room-type" && "Select Room Type"}
-            </h2>
+          {/* Header Controls */}
+          <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+            <div className="flex items-center gap-2">
+              {level !== "root" && (
+                <button
+                  onClick={() => setLevel("root")}
+                  className="p-1 rounded-full text-white/60 hover:text-white hover:bg-white/10"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+              )}
+              <h2 className="text-base font-bold font-display">
+                {level === "root" && "Create Content"}
+                {level === "note-type" && "Choose Note Type"}
+                {level === "note-composer" &&
+                  (noteKind === "temporary" ? "Post 24-Hour Note" : "Post Permanent Note")}
+                {level === "room-type" && "Choose Stage Type"}
+              </h2>
+            </div>
 
             <button
               onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full glass-panel text-white/60 hover:text-white"
+              className="p-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/10"
             >
               <X size={18} />
             </button>
           </div>
 
-          {/* Level 1: Main Create Category Options */}
+          {/* Level 1: Root Menu */}
           {level === "root" && (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-2.5 max-h-[75vh] overflow-y-auto pr-1">
               {/* 1. Note */}
               <button
                 onClick={() => setLevel("note-type")}
-                className="flex items-center justify-between p-4 rounded-[22px] glass-panel hover:border-white/30 transition active:scale-[0.98] group"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#14110F] border border-white/10 hover:border-white/20 transition active:scale-[0.98] group"
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FF9D2E]/20 text-[#FF9D2E]">
-                    <FileText size={22} />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFB800]/15 text-[#FFB800]">
+                    <FileText size={20} />
                   </div>
                   <div className="text-left">
-                    <h3 className="text-sm font-bold text-white">Text Note</h3>
-                    <p className="text-xs text-white/50">24-hour temporary or permanent note</p>
+                    <h3 className="text-xs font-bold text-white">Text or Voice Note</h3>
+                    <p className="text-[11px] text-white/50">24-hour note or permanent post</p>
                   </div>
                 </div>
-                <ChevronRight size={18} className="text-white/40 group-hover:text-white" />
-              </button>
-
-              {/* 1b. Voice Note */}
-              <button
-                onClick={() => {
-                  setVoiceRecorderOpen(true);
-                }}
-                className="flex items-center justify-between p-4 rounded-[22px] bg-gradient-to-r from-[#FF9D2E]/15 to-[#24A3C7]/15 border border-[#24A3C7]/30 hover:border-[#24A3C7]/60 transition active:scale-[0.98] group"
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#FF9D2E] to-[#24A3C7] text-white shadow-md">
-                    <Mic size={22} />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-sm font-bold text-white">Voice Note</h3>
-                    <p className="text-xs text-white/70">Record 24h or permanent voice note</p>
-                  </div>
-                </div>
-                <ChevronRight size={18} className="text-white/40 group-hover:text-white" />
+                <ChevronRight size={16} className="text-white/40 group-hover:text-white" />
               </button>
 
               {/* 2. Story */}
               <button
                 onClick={() => {
+                  onClose();
                   setStoryModalOpen(true);
                 }}
-                className="flex items-center justify-between p-4 rounded-[22px] glass-panel hover:border-white/30 transition active:scale-[0.98] group"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#14110F] border border-white/10 hover:border-white/20 transition active:scale-[0.98] group"
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#39B7F2]/20 text-[#39B7F2]">
-                    <Camera size={22} />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF9A3D]/15 text-[#FF9A3D]">
+                    <Camera size={20} />
                   </div>
                   <div className="text-left">
-                    <h3 className="text-sm font-bold text-white">Story</h3>
-                    <p className="text-xs text-white/50">24-hour photo, video, or voice story</p>
+                    <h3 className="text-xs font-bold text-white">Story</h3>
+                    <p className="text-[11px] text-white/50">24-hour photo or video story</p>
                   </div>
                 </div>
-                <ChevronRight size={18} className="text-white/40 group-hover:text-white" />
+                <ChevronRight size={16} className="text-white/40 group-hover:text-white" />
               </button>
 
               {/* 3. Room */}
               <button
                 onClick={() => setLevel("room-type")}
-                className="flex items-center justify-between p-4 rounded-[22px] glass-panel hover:border-white/30 transition active:scale-[0.98] group"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#14110F] border border-white/10 hover:border-white/20 transition active:scale-[0.98] group"
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#6139F2]/20 text-[#6139F2]">
-                    <Radio size={22} />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#30C878]/15 text-[#30C878]">
+                    <Radio size={20} />
                   </div>
                   <div className="text-left">
-                    <h3 className="text-sm font-bold text-white">Room</h3>
-                    <p className="text-xs text-white/50">Voice Room or Karaoke Stage</p>
+                    <h3 className="text-xs font-bold text-white">Audio Room</h3>
+                    <p className="text-[11px] text-white/50">Voice Room or Karaoke Stage</p>
                   </div>
                 </div>
-                <ChevronRight size={18} className="text-white/40 group-hover:text-white" />
+                <ChevronRight size={16} className="text-white/40 group-hover:text-white" />
               </button>
 
               {/* 4. Event */}
               <button
                 onClick={() => {
                   onClose();
-                  navigate("/events");
+                  navigate(routes.events());
                 }}
-                className="flex items-center justify-between p-4 rounded-[22px] glass-panel hover:border-white/30 transition active:scale-[0.98] group"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#14110F] border border-white/10 hover:border-white/20 transition active:scale-[0.98] group"
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#35C67A]/20 text-[#35C67A]">
-                    <Calendar size={22} />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFB800]/15 text-[#FFB800]">
+                    <Calendar size={20} />
                   </div>
                   <div className="text-left">
-                    <h3 className="text-sm font-bold text-white">Event</h3>
-                    <p className="text-xs text-white/50">Physical or virtual live event</p>
+                    <h3 className="text-xs font-bold text-white">Event</h3>
+                    <p className="text-[11px] text-white/50">Physical or virtual social event</p>
                   </div>
                 </div>
-                <ChevronRight size={18} className="text-white/40 group-hover:text-white" />
-              </button>
-
-              {/* 5. Live Broadcast */}
-              <button
-                onClick={() => {
-                  onClose();
-                  navigate("/rooms");
-                  toast.success("Opening Live Broadcast Stage...");
-                }}
-                className="flex items-center justify-between p-4 rounded-[22px] glass-panel hover:border-white/30 transition active:scale-[0.98] group"
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-500/20 text-red-400">
-                    <Video size={22} />
-                  </div>
-                  <div className="text-left">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-white">Live Broadcast</h3>
-                      <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-[10px] font-semibold text-red-300 border border-red-500/30">
-                        LIVE
-                      </span>
-                    </div>
-                    <p className="text-xs text-white/50">Stream live video or voice to followers</p>
-                  </div>
-                </div>
-                <ChevronRight size={18} className="text-white/40 group-hover:text-white" />
+                <ChevronRight size={16} className="text-white/40 group-hover:text-white" />
               </button>
             </div>
           )}
 
-          {/* Level 2: Note Type Selection (Temporary vs Permanent) */}
+          {/* Level 2: Note Types */}
           {level === "note-type" && (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <button
                 onClick={() => {
                   setNoteKind("temporary");
                   setLevel("note-composer");
                 }}
-                className="w-full text-left p-4 rounded-[22px] glass-panel border border-[#FF9D2E]/40 hover:bg-[#FF9D2E]/10 transition active:scale-95"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#14110F] border border-white/10 hover:border-white/20 transition active:scale-[0.98]"
               >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-[#FF9D2E] uppercase tracking-wider flex items-center gap-1.5">
-                    <Clock size={14} /> Temporary Note
-                  </span>
-                  <span className="text-[10px] text-white/50">Max 200 chars</span>
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFB800]/15 text-[#FFB800]">
+                    <Clock size={20} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-xs font-bold text-white">24-Hour Note</h3>
+                    <p className="text-[11px] text-white/50">Max 200 characters • Auto-expires</p>
+                  </div>
                 </div>
-                <p className="text-xs text-white/80 leading-relaxed">
-                  Disappears after 24 hours. Great for quick daily thoughts & status updates.
-                </p>
+                <ChevronRight size={16} className="text-white/40" />
               </button>
 
               <button
@@ -295,112 +254,147 @@ export function CreateSheet({ open, onClose }: CreateSheetProps) {
                   setNoteKind("permanent");
                   setLevel("note-composer");
                 }}
-                className="w-full text-left p-4 rounded-[22px] glass-panel border border-[#39B7F2]/40 hover:bg-[#39B7F2]/10 transition active:scale-95"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#14110F] border border-white/10 hover:border-white/20 transition active:scale-[0.98]"
               >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-[#39B7F2] uppercase tracking-wider flex items-center gap-1.5">
-                    <FileText size={14} /> Permanent Note
-                  </span>
-                  <span className="text-[10px] text-white/50">Max 5,000 chars</span>
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF9A3D]/15 text-[#FF9A3D]">
+                    <FileText size={20} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-xs font-bold text-white">Permanent Note</h3>
+                    <p className="text-[11px] text-white/50">
+                      Max 1,000 characters • Stays on profile
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-white/80 leading-relaxed">
-                  Stays permanently on your profile. Supports text, images, video, and audio.
-                </p>
+                <ChevronRight size={16} className="text-white/40" />
+              </button>
+
+              <button
+                onClick={() => {
+                  onClose();
+                  setVoiceRecorderOpen(true);
+                }}
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#14110F] border border-white/10 hover:border-white/20 transition active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#30C878]/15 text-[#30C878]">
+                    <Mic size={20} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-xs font-bold text-white">Record Voice Note</h3>
+                    <p className="text-[11px] text-white/50">Speak to your community</p>
+                  </div>
+                </div>
+                <ChevronRight size={16} className="text-white/40" />
               </button>
             </div>
           )}
 
-          {/* Level 2: Note Composer */}
+          {/* Level 3: Note Composer */}
           {level === "note-composer" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-1">
-                <span className="text-xs font-semibold text-white/60">
-                  {noteKind === "temporary" ? "Disappears in 24 hours" : "Stays on your profile"}
-                </span>
-                <span className="text-xs font-bold text-[#39B7F2]">
-                  {noteContent.length} / {noteKind === "temporary" ? 200 : 5000}
-                </span>
-              </div>
-
+            <div className="space-y-3">
               <textarea
                 value={noteContent}
                 onChange={(e) => setNoteContent(e.target.value)}
-                maxLength={noteKind === "temporary" ? 200 : 5000}
+                maxLength={noteKind === "temporary" ? 200 : 1000}
+                rows={4}
                 placeholder={
                   noteKind === "temporary"
-                    ? "What's on your mind today? (200 chars max)..."
-                    : "Write a permanent note, article, or voice story..."
+                    ? "Share a quick 24-hour thought (max 200 chars)..."
+                    : "Share a permanent note with your followers..."
                 }
-                rows={noteKind === "temporary" ? 3 : 5}
-                className="w-full p-4 rounded-[22px] glass-panel text-sm text-white placeholder:text-white/35 focus:outline-none focus:border-[#24A3C7]"
+                className="w-full p-3 rounded-xl bg-[#14110F] text-xs text-white placeholder-white/40 border border-white/10 focus:outline-none focus:border-[#FFB800] resize-none"
               />
 
+              <div className="flex items-center justify-between text-[11px] text-white/50">
+                <span>{noteKind === "temporary" ? "24-Hour Note" : "Permanent Note"}</span>
+                <span>
+                  {noteContent.length} / {noteKind === "temporary" ? 200 : 1000}
+                </span>
+              </div>
+
               <button
-                onClick={handleCreateNote}
-                className="w-full py-3.5 rounded-full bg-gradient-to-r from-[#24A3C7] to-[#6139F2] text-white font-bold text-sm shadow-lg active:scale-95 transition"
+                onClick={handleCreateTextNote}
+                disabled={isSubmitting || !noteContent.trim()}
+                className="w-full py-2.5 rounded-xl bg-[#FFB800] text-black font-bold text-xs disabled:opacity-40 transition active:scale-95"
               >
-                Publish Note
+                {isSubmitting ? "Posting..." : "Publish Note"}
               </button>
             </div>
           )}
 
-          {/* Level 2: Room Type Selection (Voice Room vs Karaoke Room) */}
+          {/* Level 2: Room Types */}
           {level === "room-type" && (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <button
                 onClick={() => {
                   onClose();
-                  navigate("/rooms");
-                  toast.success("Creating Voice Room...");
+                  navigate(routes.rooms());
+                  toast.success("Opening Voice Room Stage...");
                 }}
-                className="w-full text-left p-4 rounded-[22px] glass-panel border border-[#6139F2]/40 hover:bg-[#6139F2]/10 transition active:scale-95"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#14110F] border border-white/10 hover:border-white/20 transition active:scale-[0.98]"
               >
-                <div className="flex items-center gap-2 mb-1 text-[#6139F2] font-bold text-xs uppercase tracking-wider">
-                  <Mic size={16} /> Voice Room
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFB800]/15 text-[#FFB800]">
+                    <Radio size={20} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-xs font-bold text-white">Live Voice Room</h3>
+                    <p className="text-[11px] text-white/50">Host a real-time voice discussion</p>
+                  </div>
                 </div>
-                <p className="text-xs text-white/80">
-                  Host live conversations, podcasts, and community discussions.
-                </p>
+                <ChevronRight size={16} className="text-white/40" />
               </button>
 
               <button
                 onClick={() => {
                   onClose();
-                  navigate("/rooms");
-                  toast.success("Creating Karaoke Stage...");
+                  navigate(routes.rooms());
+                  toast.success("Opening Karaoke Stage...");
                 }}
-                className="w-full text-left p-4 rounded-[22px] glass-panel border border-[#FF9D2E]/40 hover:bg-[#FF9D2E]/10 transition active:scale-95"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-[#14110F] border border-white/10 hover:border-white/20 transition active:scale-[0.98]"
               >
-                <div className="flex items-center gap-2 mb-1 text-[#FF9D2E] font-bold text-xs uppercase tracking-wider">
-                  <Music2 size={16} /> Karaoke Stage
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF9A3D]/15 text-[#FF9A3D]">
+                    <Music2 size={20} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-xs font-bold text-white">Karaoke Room</h3>
+                    <p className="text-[11px] text-white/50">Sing live with community</p>
+                  </div>
                 </div>
-                <p className="text-xs text-white/80">
-                  Host live singing performances with singer queues and cheer reactions.
-                </p>
+                <ChevronRight size={16} className="text-white/40" />
               </button>
             </div>
-          )}
-
-          {voiceRecorderOpen && (
-            <VoiceNoteRecorderModal
-              open={voiceRecorderOpen}
-              onClose={() => setVoiceRecorderOpen(false)}
-              onPublished={() => {
-                setVoiceRecorderOpen(false);
-                onClose();
-              }}
-              mode="note"
-            />
-          )}
-
-          {storyModalOpen && (
-            <CreateStoryModal open={storyModalOpen} onClose={() => setStoryModalOpen(false)} />
           )}
         </motion.div>
       </div>
+
+      {/* Voice Note Recorder Modal */}
+      {voiceRecorderOpen && (
+        <VoiceNoteRecorderModal
+          open={voiceRecorderOpen}
+          onClose={() => setVoiceRecorderOpen(false)}
+          onPublished={() => {
+            setVoiceRecorderOpen(false);
+            navigate(routes.home());
+          }}
+        />
+      )}
+
+      {/* Create Story Modal */}
+      {storyModalOpen && (
+        <CreateStoryModal
+          isOpen={storyModalOpen}
+          onClose={() => setStoryModalOpen(false)}
+          onStoryCreated={() => {
+            setStoryModalOpen(false);
+            navigate(routes.home());
+          }}
+        />
+      )}
     </AnimatePresence>,
     document.body,
   );
 }
-
-export default CreateSheet;

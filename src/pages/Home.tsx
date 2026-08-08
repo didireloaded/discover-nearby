@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Mic, Radio, Sparkles } from "lucide-react";
+import { Plus, Mic, Radio } from "lucide-react";
 import { useNotes } from "@/hooks/useNotes";
 import { NoteCard } from "@/components/feed/NoteCard";
 import { StoryService } from "@/services/stories";
@@ -10,6 +10,7 @@ import { CreateStoryModal } from "@/components/stories/CreateStoryModal";
 import { VoiceNoteRecorderModal } from "@/components/voice/VoiceNoteRecorderModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { routes } from "@/app/navigation";
 
 export function Home() {
   const navigate = useNavigate();
@@ -43,13 +44,13 @@ export function Home() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-full pb-28 pt-1 bg-[#0B0A09] text-white">
+    <div className="flex flex-col min-h-full pb-28 pt-1 bg-[#090807] text-white">
       {/* 1. Quiet Stream Header */}
       <div className="px-5 mb-4 flex items-center justify-between">
         <div className="flex items-center gap-5">
           <button
             onClick={() => setFeedTab("discover")}
-            className={`pb-1 text-base font-bold transition relative ${
+            className={`pb-1 text-base font-bold transition relative font-display ${
               feedTab === "discover"
                 ? "text-white border-b-2 border-[#FFB800]"
                 : "text-white/40 hover:text-white/70"
@@ -59,7 +60,7 @@ export function Home() {
           </button>
           <button
             onClick={() => setFeedTab("following")}
-            className={`pb-1 text-base font-bold transition relative ${
+            className={`pb-1 text-base font-bold transition relative font-display ${
               feedTab === "following"
                 ? "text-white border-b-2 border-[#FFB800]"
                 : "text-white/40 hover:text-white/70"
@@ -71,7 +72,7 @@ export function Home() {
 
         <button
           onClick={() => setIsVoiceRecorderOpen(true)}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#FFB800] text-black text-xs font-bold shadow-md hover:bg-[#FFB800]/90 transition active:scale-95"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#FFB800] text-black text-xs font-bold shadow-md hover:bg-[#FFB800]/90 transition active:scale-95 shrink-0"
         >
           <Mic size={14} />
           <span>Voice Note</span>
@@ -86,7 +87,7 @@ export function Home() {
             onClick={() => setIsStoryModalOpen(true)}
             className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
           >
-            <div className="relative h-14 w-14 rounded-full bg-[#181513] border border-dashed border-white/30 p-0.5 flex items-center justify-center group-hover:border-[#FFB800] transition">
+            <div className="relative h-14 w-14 rounded-full bg-[#14110F] border border-dashed border-white/30 p-0.5 flex items-center justify-center group-hover:border-[#FFB800] transition">
               <Avatar
                 size={48}
                 profile={
@@ -113,7 +114,7 @@ export function Home() {
           {stories.map((story) => (
             <button
               key={story.id}
-              onClick={() => navigate(`/story/${story.id}`)}
+              onClick={() => navigate(routes.story(story.id))}
               className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
             >
               <div className="h-14 w-14 rounded-full p-0.5 border-2 border-[#FFB800]">
@@ -139,76 +140,75 @@ export function Home() {
       {liveRooms.length > 0 && (
         <div className="px-5 mb-4 space-y-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold text-white/80">
-              <Radio size={13} className="text-[#FFB800]" />
-              <span>Live Now</span>
-            </div>
+            <span className="text-xs font-bold text-white/60 uppercase tracking-wider">
+              Live Voice Stages
+            </span>
             <button
-              onClick={() => navigate("/rooms")}
-              className="text-[11px] text-[#FFB800] font-semibold hover:underline"
+              onClick={() => navigate(routes.rooms())}
+              className="text-[11px] font-bold text-[#FFB800]"
             >
               See all
             </button>
           </div>
-          <div className="space-y-2">
+
+          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1">
             {liveRooms.map((room) => (
-              <button
+              <div
                 key={room.id}
-                onClick={() => navigate(`/room/${room.id}`)}
-                className="w-full flex items-center justify-between p-3 rounded-2xl bg-[#181513] border border-white/10 text-left hover:border-[#FFB800]/30 transition"
+                onClick={() => navigate(routes.voiceRoom(room.id))}
+                className="shrink-0 w-64 p-3.5 rounded-[20px] bg-[#1C1714] border border-white/10 space-y-2 cursor-pointer hover:border-white/20 transition"
               >
-                <div className="flex items-center gap-3">
-                  <span className="w-2 h-2 rounded-full bg-[#10b981]" />
-                  <div>
-                    <p className="text-xs font-bold text-white">{room.title || "Voice Room"}</p>
-                    <p className="text-[11px] text-white/50">
-                      Host: {room.profiles?.display_name || "Creator"}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-[10px] font-bold text-[#FF493D]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF493D] animate-pulse" />
+                    LIVE
+                  </span>
+                  <Radio size={12} className="text-white/40" />
                 </div>
-                <span className="px-3 py-1 rounded-xl bg-[#FFB800] text-black text-[11px] font-bold">
-                  Listen
-                </span>
-              </button>
+                <p className="text-xs font-bold text-white truncate">{room.title}</p>
+                <p className="text-[11px] text-white/50 truncate">
+                  Host: {room.profiles?.display_name || "Creator"}
+                </p>
+              </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* 4. Continuous Social Feed Stream */}
-      <div className="px-5 space-y-3">
+      {/* 4. Stream Content Feed */}
+      <div className="px-5 space-y-4">
         {loading ? (
           <SkeletonList />
         ) : error ? (
-          <div className="p-6 rounded-2xl bg-[#181513] border border-red-500/20 text-center space-y-2">
-            <p className="text-xs font-bold text-red-400">Failed to load feed</p>
+          <div className="p-8 text-center bg-[#14110F] rounded-2xl border border-white/10 space-y-2">
+            <p className="text-xs text-white/60">Failed to load home feed notes.</p>
             <button
               onClick={() => refreshNotes()}
-              className="px-4 py-1.5 rounded-xl bg-white/10 text-white text-xs font-semibold hover:bg-white/20"
+              className="px-4 py-1.5 rounded-xl bg-[#FFB800] text-black text-xs font-bold"
             >
               Retry
             </button>
           </div>
         ) : notes.length === 0 ? (
-          <div className="p-8 rounded-2xl bg-[#181513] border border-white/10 text-center space-y-2">
-            <Sparkles size={28} className="mx-auto text-[#FFB800]" />
-            <p className="text-sm font-bold text-white">No notes published yet</p>
-            <p className="text-xs text-white/50 max-w-[240px] mx-auto leading-relaxed">
-              When creators share notes or voice thoughts, you'll see them here.
+          <div className="p-10 text-center bg-[#14110F] rounded-2xl border border-white/10 space-y-2">
+            <p className="text-sm font-bold text-white">No Notes in stream yet</p>
+            <p className="text-xs text-white/50 max-w-[220px] mx-auto">
+              Be the first to share a Voice or Permanent Note on Matisa!
             </p>
             <button
               onClick={() => setIsVoiceRecorderOpen(true)}
-              className="px-5 py-2 rounded-xl bg-[#FFB800] text-black text-xs font-bold shadow-md hover:bg-[#FFB800]/90 transition"
+              className="mt-2 px-4 py-2 rounded-xl bg-[#FFB800] text-black text-xs font-bold inline-flex items-center gap-1.5"
             >
-              Record First Note
+              <Mic size={14} />
+              <span>Record Voice Note</span>
             </button>
           </div>
         ) : (
-          notes.map((note) => <NoteCard key={note.id} note={note} />)
+          notes.map((note) => <NoteCard key={note.id} note={note} onRefresh={refreshNotes} />)
         )}
       </div>
 
-      {/* Modals */}
+      {/* Create Story Modal */}
       {isStoryModalOpen && (
         <CreateStoryModal
           open={isStoryModalOpen}
@@ -219,6 +219,7 @@ export function Home() {
         />
       )}
 
+      {/* Voice Recorder Modal */}
       {isVoiceRecorderOpen && (
         <VoiceNoteRecorderModal
           open={isVoiceRecorderOpen}
@@ -227,11 +228,8 @@ export function Home() {
             setIsVoiceRecorderOpen(false);
             refreshNotes();
           }}
-          mode="note"
         />
       )}
     </div>
   );
 }
-
-export default Home;

@@ -1,5 +1,6 @@
 import { Home, Search, Plus, Bell, User } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
+import { routes } from "@/app/navigation";
 
 interface BottomNavigationProps {
   onOpenCreate?: () => void;
@@ -12,16 +13,13 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
 
   const isHomeActive = path === "/";
   const isExploreActive = path === "/explore" || path.startsWith("/explore");
-  const isRoomsActive =
-    path === "/rooms" ||
-    path.startsWith("/rooms") ||
-    path === "/notifications" ||
-    path === "/activity";
+  const isActivityActive =
+    path === "/activity" || path === "/notifications" || path.startsWith("/notifications");
   const isProfileActive = path === "/profile" || path.startsWith("/profile");
 
   return (
     <nav
-      className={`fixed left-1/2 z-50 grid grid-cols-5 items-center -translate-x-1/2 overflow-hidden rounded-full border border-white/10 bg-[#181513] shadow-lg transition-all duration-300 ease-out ${
+      className={`fixed left-1/2 z-50 grid grid-cols-5 items-center -translate-x-1/2 overflow-hidden rounded-full border border-white/10 bg-[#1C1714] shadow-2xl transition-all duration-300 ease-out ${
         compact
           ? "bottom-3 h-11 w-[72%] max-w-[290px] px-1 opacity-90 scale-95"
           : "bottom-5 h-14 w-[92%] max-w-[390px] px-2 opacity-100 scale-100"
@@ -32,7 +30,7 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
     >
       {/* 1. Home */}
       <Link
-        to="/"
+        to={routes.home()}
         className="relative flex items-center justify-center py-1.5 transition active:scale-95 text-white/60 hover:text-white"
         aria-label="Home"
       >
@@ -46,9 +44,9 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
         {isHomeActive && <span className="absolute bottom-1.5 w-1 h-1 rounded-full bg-[#FFB800]" />}
       </Link>
 
-      {/* 2. Explore / Search */}
+      {/* 2. Explore */}
       <Link
-        to="/explore"
+        to={routes.explore()}
         className="relative flex items-center justify-center py-1.5 transition active:scale-95 text-white/60 hover:text-white"
         aria-label="Explore"
       >
@@ -75,27 +73,27 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
         <Plus size={compact ? 18 : 22} strokeWidth={3} className="text-black" />
       </button>
 
-      {/* 4. Notifications / Activity */}
+      {/* 4. Activity */}
       <Link
-        to="/activity"
+        to={routes.activity()}
         className="relative flex items-center justify-center py-1.5 transition active:scale-95 text-white/60 hover:text-white"
-        aria-label="Notifications"
+        aria-label="Activity"
       >
         <div
           className={`flex items-center justify-center p-2 rounded-full transition ${
-            isRoomsActive ? "text-[#FFB800]" : "text-white/60 hover:text-white"
+            isActivityActive ? "text-[#FFB800]" : "text-white/60 hover:text-white"
           }`}
         >
-          <Bell size={20} strokeWidth={isRoomsActive ? 2.5 : 2} />
+          <Bell size={20} strokeWidth={isActivityActive ? 2.5 : 2} />
         </div>
-        {isRoomsActive && (
+        {isActivityActive && (
           <span className="absolute bottom-1.5 w-1 h-1 rounded-full bg-[#FFB800]" />
         )}
       </Link>
 
       {/* 5. Profile */}
       <Link
-        to="/profile"
+        to={routes.profile()}
         className="relative flex items-center justify-center py-1.5 transition active:scale-95 text-white/60 hover:text-white"
         aria-label="Profile"
       >
@@ -113,5 +111,3 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
     </nav>
   );
 }
-
-export default BottomNavigation;

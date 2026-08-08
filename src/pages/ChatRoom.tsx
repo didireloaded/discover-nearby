@@ -7,6 +7,7 @@ import { MessageService } from "@/services/messages";
 import { Avatar } from "@/components/common/Avatar";
 import { VoiceNoteRecorderModal } from "@/components/voice/VoiceNoteRecorderModal";
 import { SkeletonList } from "@/components/common/SkeletonLoader";
+import { routes } from "@/app/navigation";
 import { toast } from "sonner";
 
 export function ChatRoom() {
@@ -69,13 +70,13 @@ export function ChatRoom() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0A09] text-white flex flex-col">
+    <div className="min-h-screen bg-[#090807] text-white flex flex-col">
       {/* Dynamic Header */}
-      <div className="sticky top-0 z-40 bg-[#0B0A09]/95 backdrop-blur-xl border-b border-white/[0.08]">
+      <div className="sticky top-0 z-40 bg-[#090807] border-b border-white/10">
         <div className="flex items-center gap-3 px-4 h-14">
           <button
-            onClick={() => navigate("/inbox")}
-            className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition active:scale-95 text-white"
+            onClick={() => navigate(routes.inbox())}
+            className="w-9 h-9 rounded-full bg-[#1C1714] flex items-center justify-center hover:bg-white/20 transition active:scale-95 text-white"
             aria-label="Back to inbox"
           >
             <ArrowLeft className="w-5 h-5 text-white/80" />
@@ -92,20 +93,20 @@ export function ChatRoom() {
           />
 
           <div className="flex-1 min-w-0">
-            <p className="text-white font-semibold text-sm truncate">
+            <p className="text-white font-semibold text-sm truncate font-display">
               {otherUser?.display_name || otherUser?.username || "Direct Message"}
             </p>
-            <p className="text-[#10b981] text-[11px] flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
+            <p className="text-[#30C878] text-[11px] flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#30C878] animate-pulse" />
               Active Now
             </p>
           </div>
 
           <button
             onClick={() => {
-              navigate("/rooms");
+              navigate(routes.rooms());
             }}
-            className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition active:scale-95 text-white"
+            className="w-9 h-9 rounded-full bg-[#1C1714] flex items-center justify-center hover:bg-white/20 transition active:scale-95 text-white"
             aria-label="Start voice room session"
           >
             <Phone className="w-4 h-4 text-white/80" />
@@ -135,7 +136,7 @@ export function ChatRoom() {
                   className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs font-medium leading-relaxed ${
                     isMine
                       ? "bg-[#FFB800] text-black font-bold rounded-tr-sm"
-                      : "bg-[#181513] text-white border border-white/10 rounded-tl-sm"
+                      : "bg-[#1C1714] text-white border border-white/10 rounded-tl-sm"
                   }`}
                 >
                   {msg.media_url ? (
@@ -161,11 +162,11 @@ export function ChatRoom() {
       </div>
 
       {/* Bottom Composer */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0A09] border-t border-white/10 p-3 max-w-[430px] mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#090807] border-t border-white/10 p-3 max-w-[430px] mx-auto">
         <div className="flex items-center gap-2">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 text-white/70 hover:text-white shrink-0"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#1C1714] text-white/70 hover:text-white shrink-0"
             aria-label="Attach photo"
           >
             <ImageIcon size={18} />
@@ -173,7 +174,7 @@ export function ChatRoom() {
 
           <button
             onClick={() => setIsVoiceModalOpen(true)}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 text-white/70 hover:text-white shrink-0"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#1C1714] text-white/70 hover:text-white shrink-0"
             aria-label="Voice message"
           >
             <Mic size={18} />
@@ -185,7 +186,7 @@ export function ChatRoom() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            className="flex-1 h-10 px-4 rounded-xl bg-[#181513] text-xs text-white placeholder-white/40 border border-white/10 focus:outline-none focus:border-[#FFB800]"
+            className="flex-1 h-10 px-4 rounded-xl bg-[#14110F] text-xs text-white placeholder-white/40 border border-white/10 focus:outline-none focus:border-[#FFB800]"
           />
 
           <button
