@@ -151,7 +151,7 @@ export function Settings() {
           </div>
           <button
             onClick={() => navigate("/profile")}
-            className="px-3.5 py-1.5 rounded-full bg-[#24A3C7]/15 text-[#39B7F2] text-xs font-bold border border-[#24A3C7]/30"
+            className="px-3.5 py-1.5 rounded-full bg-[#FFB800]/15 text-[#FFB800] text-xs font-bold border border-[#FFB800]/30 hover:bg-[#FFB800]/25 transition"
           >
             View
           </button>

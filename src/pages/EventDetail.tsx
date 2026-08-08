@@ -108,7 +108,7 @@ export function EventDetail() {
             </div>
 
             <div className="flex items-center gap-2 text-xs text-white/80 font-medium">
-              <MapPin size={14} className="text-[#24A3C7]" />
+              <MapPin size={14} className="text-[#FFB800]" />
               <span>{event.location_name || "Windhoek, Namibia"}</span>
             </div>
 

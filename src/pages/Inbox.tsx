@@ -1,59 +1,61 @@
-// src/pages/Inbox.tsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MoreHorizontal, MessageSquare, Plus } from "lucide-react";
-import { useConversations } from "@/hooks/useMessages";
-import { SkeletonList } from "@/components/common/SkeletonLoader";
+import { Search, Plus, MoreHorizontal, MessageSquare } from "lucide-react";
+import { useMessages } from "@/hooks/useMessages";
 import { PremiumEmptyState } from "@/components/common/PremiumEmptyState";
+import { SkeletonList } from "@/components/common/SkeletonLoader";
 
-const DEMO_CONVERSATIONS = [
-  {
-    id: "conv-demo-1",
-    name: "Hanna Dowie",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-    lastMessage: "Hey! Want to collab on the next event?",
-    time: "2m",
-    unread: 2,
-    online: true,
-  },
-  {
-    id: "conv-demo-2",
-    name: "Jason Mutonga",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-    lastMessage: "The voice room was great last night 🎙️",
-    time: "1h",
-    unread: 0,
-    online: false,
-  },
-  {
-    id: "conv-demo-3",
-    name: "Windhoek Creators",
-    avatar: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=100&h=100&fit=crop",
-    lastMessage: "Silas: Anyone free this weekend?",
-    time: "3h",
-    unread: 5,
-    online: true,
-    isGroup: true,
-  },
-];
-
-export default function Inbox() {
+export function Inbox() {
   const navigate = useNavigate();
-  const { conversations, isLoading } = useConversations();
+  const { conversations, isLoading } = useMessages();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const activeConversations = conversations.length > 0 ? conversations : DEMO_CONVERSATIONS;
+  const fallbackConversations = [
+    {
+      id: "conv-1",
+      name: "Maria Theodore",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+      lastMessage: "See you at the acoustic live room session tonight!",
+      time: "2m",
+      unread: 2,
+      online: true,
+    },
+    {
+      id: "conv-2",
+      name: "Gazza Official",
+      avatar:
+        "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=400&q=80",
+      lastMessage: "Thanks for sharing the voice note session link.",
+      time: "1h",
+      unread: 0,
+      online: false,
+    },
+    {
+      id: "conv-3",
+      name: "Lukas Shilongo",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+      lastMessage: "Check out the new Swakopmund event notes!",
+      time: "1d",
+      unread: 0,
+      online: true,
+    },
+  ];
+
+  const activeConversations =
+    conversations && conversations.length > 0 ? conversations : fallbackConversations;
 
   const filteredConversations = activeConversations.filter(
-    (conv) =>
+    (conv: any) =>
       conv.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       conv.lastMessage.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
-    <div className="min-h-screen bg-[#06101D] text-white pb-28">
+    <div className="min-h-screen bg-[#0B0A09] text-white pb-28">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#06101D]/90 backdrop-blur-xl border-b border-white/[0.08] px-4 py-3">
+      <div className="sticky top-0 z-40 bg-[#0B0A09]/95 backdrop-blur-xl border-b border-white/[0.08] px-4 py-3">
         <div className="flex items-center justify-between h-11">
           <h1 className="text-white font-bold text-xl tracking-wide font-display">Messages</h1>
           <div className="flex items-center gap-2">
@@ -73,7 +75,7 @@ export default function Inbox() {
 
       {/* Search Bar */}
       <div className="px-4 py-3">
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-white/5 rounded-full border border-white/10 focus-within:border-[#24A3C7]">
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-[#181513] rounded-full border border-white/10 focus-within:border-[#FFB800]">
           <Search className="w-4 h-4 text-white/40" />
           <input
             type="text"
@@ -111,7 +113,7 @@ export default function Inbox() {
                   className="w-12 h-12 rounded-full object-cover border border-white/10 shadow-md"
                 />
                 {conv.online && (
-                  <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-[#06101D]" />
+                  <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#10b981] rounded-full border-2 border-[#0B0A09]" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -122,7 +124,7 @@ export default function Inbox() {
                 <div className="flex items-center justify-between mt-1">
                   <p className="text-white/60 text-xs truncate max-w-[220px]">{conv.lastMessage}</p>
                   {conv.unread > 0 && (
-                    <span className="ml-2 px-2 py-0.5 bg-[#24A3C7] text-white text-[11px] font-bold rounded-full shadow-sm">
+                    <span className="ml-2 px-2 py-0.5 bg-[#FFB800] text-black text-[11px] font-bold rounded-full shadow-sm">
                       {conv.unread}
                     </span>
                   )}
@@ -135,3 +137,5 @@ export default function Inbox() {
     </div>
   );
 }
+
+export default Inbox;

@@ -133,7 +133,7 @@ export function Auth() {
             }}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition ${
               authMethod === "phone"
-                ? "bg-[#24A3C7] text-white shadow-md"
+                ? "bg-[#FFB800] text-black shadow-md"
                 : "text-white/60 hover:text-white"
             }`}
           >
@@ -145,7 +145,7 @@ export function Auth() {
             onClick={() => setAuthMethod("email")}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition ${
               authMethod === "email"
-                ? "bg-[#24A3C7] text-white shadow-md"
+                ? "bg-[#FFB800] text-black shadow-md"
                 : "text-white/60 hover:text-white"
             }`}
           >
@@ -168,7 +168,7 @@ export function Auth() {
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="81 123 4567"
                     required
-                    className="h-14 pl-16 rounded-2xl bg-[var(--color-surface-2)] border-transparent text-white font-bold"
+                    className="h-14 pl-16 rounded-2xl bg-[#181513] border-transparent text-white font-bold"
                   />
                 </div>
               ) : (
@@ -179,7 +179,7 @@ export function Auth() {
                   placeholder="Enter 6-digit SMS OTP"
                   required
                   maxLength={6}
-                  className="h-14 rounded-2xl bg-[var(--color-surface-2)] border-transparent text-center text-lg tracking-widest font-bold text-white"
+                  className="h-14 rounded-2xl bg-[#181513] border-transparent text-center text-lg tracking-widest font-bold text-white"
                 />
               )}
             </>
@@ -191,7 +191,7 @@ export function Auth() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email address"
                 required
-                className="h-14 rounded-2xl bg-[var(--color-surface-2)] border-transparent"
+                className="h-14 rounded-2xl bg-[#181513] border-transparent"
               />
               <Input
                 type="password"
@@ -199,7 +199,7 @@ export function Auth() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
                 required
-                className="h-14 rounded-2xl bg-[var(--color-surface-2)] border-transparent"
+                className="h-14 rounded-2xl bg-[#181513] border-transparent"
               />
             </>
           )}
@@ -207,7 +207,7 @@ export function Auth() {
           <Button
             variant="primary"
             disabled={loading}
-            className="w-full h-14 rounded-2xl font-bold text-base mt-4 shadow-[0_0_20px_rgba(36,163,199,0.3)] bg-gradient-to-r from-[#FF9D2E] via-[#24A3C7] to-[#6139F2]"
+            className="w-full h-14 rounded-2xl font-bold text-base mt-4 bg-[#FFB800] text-black hover:bg-[#FFB800]/90 shadow-md"
           >
             {loading
               ? "Please wait..."

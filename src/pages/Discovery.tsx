@@ -23,7 +23,6 @@ export function Discovery() {
     async function loadDiscoveryData() {
       setLoading(true);
       try {
-        // 1. Fetch real profiles from DB
         const { data: dbProfiles } = await supabase.from("profiles").select("*").limit(10);
 
         if (dbProfiles && dbProfiles.length > 0) {
@@ -65,7 +64,6 @@ export function Discovery() {
           ]);
         }
 
-        // 2. Fetch real live rooms from DB
         const { data: dbRooms } = await supabase
           .from("voice_rooms")
           .select("*, profiles(*)")
@@ -100,55 +98,36 @@ export function Discovery() {
               host: "Michelle V.",
               avatar:
                 "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80",
-              listeners: 68,
+              listeners: 89,
               type: "karaoke",
             },
           ]);
         }
 
-        // 3. Fetch real events from DB
-        const { data: dbEvents } = await supabase
-          .from("events")
-          .select("*")
-          .order("start_time", { ascending: true })
-          .limit(5);
+        const { data: dbEvents } = await supabase.from("events").select("*").limit(3);
 
         if (dbEvents && dbEvents.length > 0) {
-          setEvents(
-            dbEvents.map((e) => ({
-              id: e.id,
-              title: e.title,
-              location: e.location_name || "Windhoek",
-              date: new Date(e.start_time).toLocaleDateString(undefined, {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-              attendees: e.attendees_count || 45,
-            })),
-          );
+          setEvents(dbEvents);
         } else {
           setEvents([
             {
-              id: "event-1",
-              title: "Windhoek Summer Vocal Festival 2026",
-              location: "Independence Stadium, Windhoek",
-              date: "Fri, 8 Aug • 19:00",
-              attendees: 340,
+              id: "evt-1",
+              title: "Windhoek Street Food & Acoustic Fest",
+              location: "Independence Ave, Windhoek",
+              start_time: new Date(Date.now() + 86400000 * 2).toISOString(),
+              attendees_count: 142,
             },
             {
-              id: "event-2",
-              title: "Swakop Sunset Acoustic Sessions",
-              location: "Swakopmund Jetty",
-              date: "Sat, 9 Aug • 17:30",
-              attendees: 89,
+              id: "evt-2",
+              title: "Swakopmund Sunset Live Beach Jam",
+              location: "Mole Beach, Swakopmund",
+              start_time: new Date(Date.now() + 86400000 * 4).toISOString(),
+              attendees_count: 88,
             },
           ]);
         }
       } catch (err) {
-        console.error("Failed to load discovery data", err);
+        console.error("Error loading discovery data", err);
       } finally {
         setLoading(false);
       }
@@ -158,41 +137,31 @@ export function Discovery() {
   }, []);
 
   const filteredPeople = people.filter(
-    (u) =>
-      u.name.toLowerCase().includes(query.toLowerCase()) ||
-      u.username.toLowerCase().includes(query.toLowerCase()) ||
-      u.location?.toLowerCase().includes(query.toLowerCase()),
+    (p) =>
+      p.name.toLowerCase().includes(query.toLowerCase()) ||
+      p.username.toLowerCase().includes(query.toLowerCase()) ||
+      p.location.toLowerCase().includes(query.toLowerCase()),
   );
 
-  const filteredRooms = rooms.filter(
-    (r) =>
-      r.title.toLowerCase().includes(query.toLowerCase()) ||
-      r.host.toLowerCase().includes(query.toLowerCase()),
-  );
-
-  const filteredEvents = events.filter(
-    (e) =>
-      e.title.toLowerCase().includes(query.toLowerCase()) ||
-      e.location.toLowerCase().includes(query.toLowerCase()),
-  );
+  const filteredRooms = rooms.filter((r) => r.title.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <div className="flex flex-col min-h-full pb-28 pt-2 space-y-5">
+    <div className="flex flex-col min-h-full pb-28 pt-2 space-y-5 bg-[#0B0A09] text-white">
       {/* 1. Header & Permanent Search Bar */}
       <div className="px-5 space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight font-display">Explore</h1>
-            <p className="text-xs text-white/50">Discover Namibian voices, people & live rooms</p>
+            <h1 className="text-xl font-bold text-white tracking-tight font-display">Discover</h1>
+            <p className="text-xs text-white/50">Find your favorite Namibian creators & content</p>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs font-bold">
-            <MapPin size={13} className="text-purple-400" />
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 text-xs font-bold">
+            <MapPin size={13} className="text-[#FFB800]" />
             <span>Windhoek</span>
           </div>
         </div>
 
-        {/* Permanent Search Input */}
+        {/* Search Input */}
         <div className="relative">
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
           <input
@@ -200,58 +169,36 @@ export function Discovery() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search Namibian creators, notes, rooms & events..."
-            className="w-full h-11 pl-11 pr-4 rounded-full glass-panel text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#6139F2] transition border border-white/15"
+            className="w-full h-11 pl-11 pr-4 rounded-full bg-[#181513] text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#FFB800] transition border border-white/10"
           />
         </div>
       </div>
 
       {/* 2. Category Filter Tabs */}
       <div className="px-5 flex gap-2 overflow-x-auto no-scrollbar">
-        <button
-          onClick={() => setActiveCategory("all")}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap ${
-            activeCategory === "all"
-              ? "bg-gradient-to-r from-[#6139F2] to-[#24A3C7] text-white shadow-md"
-              : "glass-panel text-white/60 hover:text-white"
-          }`}
-        >
-          All Explore
-        </button>
-
-        <button
-          onClick={() => setActiveCategory("people")}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap ${
-            activeCategory === "people"
-              ? "bg-[#6139F2] text-white shadow-md"
-              : "glass-panel text-white/60 hover:text-white"
-          }`}
-        >
-          People Nearby
-        </button>
-
-        <button
-          onClick={() => setActiveCategory("rooms")}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
-            activeCategory === "rooms"
-              ? "bg-[#24A3C7] text-white shadow-md"
-              : "glass-panel text-white/60 hover:text-white"
-          }`}
-        >
-          <Radio size={13} />
-          <span>Live Rooms</span>
-        </button>
-
-        <button
-          onClick={() => setActiveCategory("events")}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
-            activeCategory === "events"
-              ? "bg-[#FF9D2E] text-white shadow-md"
-              : "glass-panel text-white/60 hover:text-white"
-          }`}
-        >
-          <Calendar size={13} />
-          <span>Events</span>
-        </button>
+        {[
+          { id: "all", label: "All Explore" },
+          { id: "people", label: "People Nearby" },
+          { id: "rooms", label: "Live Rooms", icon: Radio },
+          { id: "events", label: "Events", icon: Calendar },
+        ].map((tab) => {
+          const isActive = activeCategory === tab.id;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveCategory(tab.id as any)}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 ${
+                isActive
+                  ? "bg-[#FFB800] text-black shadow-md"
+                  : "bg-white/5 text-white/60 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              {Icon && <Icon size={13} />}
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* 3. Live Voice Rooms Section */}
@@ -259,12 +206,12 @@ export function Discovery() {
         <div className="px-5 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Radio size={16} className="text-[#24A3C7] animate-pulse" />
+              <Radio size={16} className="text-[#FFB800] animate-pulse" />
               <h2 className="text-sm font-bold text-white tracking-wide">Live Rooms Now</h2>
             </div>
             <button
               onClick={() => navigate("/rooms")}
-              className="text-xs font-bold text-[#24A3C7] hover:underline flex items-center gap-0.5"
+              className="text-xs font-bold text-[#FFB800] hover:underline flex items-center gap-0.5"
             >
               <span>View all</span>
               <ChevronRight size={14} />
@@ -276,7 +223,7 @@ export function Discovery() {
               <div
                 key={room.id}
                 onClick={() => navigate(`/rooms/${room.id}`)}
-                className="p-4 rounded-[22px] glass-panel-elevated border border-[#24A3C7]/30 hover:border-[#24A3C7]/60 transition cursor-pointer active:scale-[0.98] flex items-center justify-between bg-gradient-to-r from-[#06101D] to-[#0D1F38]"
+                className="p-4 rounded-[22px] bg-[#181513] border border-white/10 hover:border-[#FFB800]/50 transition cursor-pointer active:scale-[0.98] flex items-center justify-between shadow-xl"
               >
                 <div className="flex items-center gap-3.5">
                   <div className="relative">
@@ -284,7 +231,7 @@ export function Discovery() {
                       size={44}
                       profile={{ id: room.id, display_name: room.host, avatar_url: room.avatar }}
                     />
-                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-[#06101D]" />
+                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-[#FFB800] border-2 border-[#181513]" />
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-white line-clamp-1">{room.title}</h3>
@@ -294,8 +241,8 @@ export function Discovery() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-white text-xs font-bold border border-white/15">
-                  <Users size={13} className="text-[#24A3C7]" />
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 text-white text-xs font-bold border border-white/10">
+                  <Users size={13} className="text-[#FFB800]" />
                   <span>{room.listeners} listening</span>
                 </div>
               </div>
@@ -309,7 +256,7 @@ export function Discovery() {
         <div className="px-5 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Users size={16} className="text-[#6139F2]" />
+              <Users size={16} className="text-[#FFB800]" />
               <h2 className="text-sm font-bold text-white tracking-wide">
                 People Nearby in Namibia
               </h2>
@@ -320,7 +267,7 @@ export function Discovery() {
             {filteredPeople.map((user) => (
               <div
                 key={user.id}
-                className="p-3.5 rounded-[20px] glass-panel border border-white/10 flex items-center justify-between hover:border-white/20 transition"
+                className="p-3.5 rounded-[20px] bg-[#181513] border border-white/10 flex items-center justify-between hover:border-white/20 transition"
               >
                 <div
                   onClick={() => navigate(`/profile/${user.username}`)}
@@ -331,15 +278,15 @@ export function Discovery() {
                     profile={{ id: user.id, display_name: user.name, avatar_url: user.avatar }}
                   />
                   <div>
-                    <h3 className="text-sm font-bold text-white leading-tight group-hover:text-[#39B7F2] transition">
+                    <h3 className="text-sm font-bold text-white leading-tight group-hover:text-[#FFB800] transition">
                       {user.name}
                     </h3>
                     <p className="text-xs text-white/50">
                       @{user.username} • {user.location}
                     </p>
                     <div className="flex items-center gap-1.5 mt-1">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#24A3C7]/15 text-[#39B7F2] text-[10px] font-semibold border border-[#24A3C7]/30">
-                        <Users size={10} />
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 text-white/80 text-[10px] font-semibold border border-white/10">
+                        <Users size={10} className="text-[#FFB800]" />
                         {user.id === "usr-1"
                           ? "3 mutual friends"
                           : user.id === "usr-2"
@@ -355,7 +302,7 @@ export function Discovery() {
                     toast.success(`Followed @${user.username}!`);
                     navigate(`/profile/${user.username}`);
                   }}
-                  className="flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#6139F2] to-[#24A3C7] text-white text-xs font-bold shadow-md transition active:scale-95"
+                  className="flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-[#FFB800] text-black text-xs font-bold shadow-md transition active:scale-95 hover:bg-[#FFB800]/90"
                 >
                   <UserPlus size={13} />
                   <span>Follow</span>
@@ -371,41 +318,34 @@ export function Discovery() {
         <div className="px-5 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Calendar size={16} className="text-[#FF9D2E]" />
+              <Calendar size={16} className="text-[#FFB800]" />
               <h2 className="text-sm font-bold text-white tracking-wide">
                 Namibian Events This Week
               </h2>
             </div>
             <button
               onClick={() => navigate("/events")}
-              className="text-xs font-bold text-[#FF9D2E] hover:underline flex items-center gap-0.5"
+              className="text-xs font-bold text-[#FFB800] hover:underline flex items-center gap-0.5"
             >
-              <span>View events</span>
+              <span>View all</span>
               <ChevronRight size={14} />
             </button>
           </div>
 
           <div className="grid grid-cols-1 gap-3">
-            {filteredEvents.map((evt) => (
+            {events.map((evt) => (
               <div
                 key={evt.id}
-                onClick={() => navigate("/events")}
-                className="p-4 rounded-[22px] glass-panel border border-[#FF9D2E]/30 hover:border-[#FF9D2E]/60 transition cursor-pointer active:scale-[0.98] flex items-center justify-between"
+                onClick={() => navigate(`/events/${evt.id}`)}
+                className="p-4 rounded-[22px] bg-[#181513] border border-white/10 hover:border-[#FFB800]/50 transition cursor-pointer active:scale-[0.98] flex items-center justify-between shadow-xl"
               >
-                <div className="space-y-1">
-                  <span className="text-[11px] font-bold text-[#FF9D2E] uppercase tracking-wider">
-                    {evt.date}
-                  </span>
+                <div>
                   <h3 className="text-sm font-bold text-white">{evt.title}</h3>
-                  <p className="text-xs text-white/60 flex items-center gap-1">
-                    <MapPin size={12} className="text-white/40" />
-                    <span>{evt.location}</span>
-                  </p>
+                  <p className="text-xs text-white/50">{evt.location}</p>
                 </div>
-
-                <div className="px-3.5 py-1.5 rounded-full bg-[#FF9D2E]/20 text-[#FF9D2E] border border-[#FF9D2E]/40 text-xs font-bold">
-                  RSVP
-                </div>
+                <button className="px-3 py-1 rounded-full bg-[#FFB800]/15 text-[#FFB800] text-xs font-bold border border-[#FFB800]/30">
+                  Details
+                </button>
               </div>
             ))}
           </div>

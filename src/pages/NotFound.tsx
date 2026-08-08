@@ -6,9 +6,9 @@ export function NotFound() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80dvh] px-6 text-center">
-      <div className="w-20 h-20 rounded-full bg-white/[0.03] border border-white/[0.08] flex items-center justify-center mb-5">
-        <Radio size={36} className="text-[#24A3C7]" />
+    <div className="flex flex-col items-center justify-center min-h-[80dvh] px-6 text-center bg-[#0B0A09] text-white">
+      <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-5">
+        <Radio size={36} className="text-[#FFB800]" />
       </div>
 
       <h1 className="text-3xl font-extrabold text-white font-display tracking-tight">404</h1>
@@ -29,7 +29,7 @@ export function NotFound() {
         <Button
           variant="primary"
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#FF9D2E] to-[#24A3C7] text-white shadow-md"
+          className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-bold bg-[#FFB800] text-black shadow-md hover:bg-[#FFB800]/90"
         >
           <Home size={15} />
           <span>Home Feed</span>

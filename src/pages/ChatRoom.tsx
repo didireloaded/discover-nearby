@@ -1,71 +1,40 @@
-// src/pages/ChatRoom.tsx
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Phone, Mic, Image as ImageIcon, Send } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { toast } from "sonner";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Send, Mic, Image as ImageIcon, Phone } from "lucide-react";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import { VoiceNoteRecorderModal } from "@/components/voice/VoiceNoteRecorderModal";
 import { SkeletonList } from "@/components/common/SkeletonLoader";
+import { toast } from "sonner";
 
-const DEMO_CHAT_MESSAGES: Record<string, any[]> = {
-  "conv-demo-1": [
-    {
-      id: "m1",
-      sender_id: "them",
-      content: "Hey! I saw your profile and love your work.",
-      created_at: "2:30 PM",
-    },
-    {
-      id: "m2",
-      sender_id: "me",
-      content: "Thanks! Appreciate that. What do you create?",
-      created_at: "2:32 PM",
-    },
-    {
-      id: "m3",
-      sender_id: "them",
-      content: "Mostly photography and short films around Windhoek.",
-      created_at: "2:33 PM",
-    },
-    {
-      id: "m4",
-      sender_id: "me",
-      content: "That's awesome. We should collab on something!",
-      created_at: "2:35 PM",
-    },
-    {
-      id: "m5",
-      sender_id: "them",
-      content: "For sure! I'm hosting a meetup this weekend. You should come through.",
-      created_at: "2:36 PM",
-    },
-  ],
-};
-
-export default function ChatRoom() {
+export function ChatRoom() {
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
-  const { profile, session } = useAuth();
-  const activeUserId = session?.user?.id || profile?.id || "demo-user-123";
-
-  const { messages, isLoading, sendMessage } = useMessages(conversationId);
-  const [localMessages, setLocalMessages] = useState<any[]>([]);
+  const { user } = useAuth();
+  const { messages, sendMessage, sendMediaMessage, isLoading } = useMessages(conversationId);
   const [input, setInput] = useState("");
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Sync demo messages if using demo conversation ID
-  useEffect(() => {
-    if (conversationId && DEMO_CHAT_MESSAGES[conversationId]) {
-      setLocalMessages(DEMO_CHAT_MESSAGES[conversationId]);
-    } else {
-      setLocalMessages([]);
-    }
-  }, [conversationId]);
+  const activeUserId = user?.id || "me";
 
-  const activeMessages = messages.length > 0 ? messages : localMessages;
+  const fallbackMessages = [
+    {
+      id: "m-1",
+      sender_id: "other",
+      content: "Hey! Excited for the live room acoustic session tonight?",
+      created_at: "10:42 AM",
+    },
+    {
+      id: "m-2",
+      sender_id: activeUserId,
+      content: "Yes! Dropping a new voice note preview right before we start.",
+      created_at: "10:44 AM",
+    },
+  ];
+
+  const activeMessages = messages.length > 0 ? messages : fallbackMessages;
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -73,55 +42,39 @@ export default function ChatRoom() {
     }
   }, [activeMessages]);
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || !conversationId) return;
+  const handleSend = async () => {
+    if (!input.trim()) return;
     const text = input.trim();
     setInput("");
-
-    try {
-      if (conversationId.startsWith("conv-demo-")) {
-        const demoMsg = {
-          id: `demo-${Date.now()}`,
-          sender_id: activeUserId,
-          content: text,
-          created_at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        };
-        setLocalMessages((prev) => [...prev, demoMsg]);
-        toast.success("Message sent");
-      } else {
-        await sendMessage(text);
-        toast.success("Message sent");
-      }
-    } catch (err) {
+    const success = await sendMessage(text);
+    if (!success) {
       toast.error("Failed to send message");
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleSend();
     }
   };
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !conversationId) return;
-    toast.success(`Image attached: ${file.name}`);
-
-    const demoMsg = {
-      id: `img-${Date.now()}`,
-      sender_id: activeUserId,
-      content: `📷 ${file.name}`,
-      created_at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-    setLocalMessages((prev) => [...prev, demoMsg]);
+    if (!file) return;
+    toast.info("Sending photo...");
+    const success = await sendMediaMessage(file, "image");
+    if (success) {
+      toast.success("Photo sent");
+    } else {
+      toast.error("Failed to send photo");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#06101D] text-white flex flex-col">
+    <div className="min-h-screen bg-[#0B0A09] text-white flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#06101D]/90 backdrop-blur-xl border-b border-white/[0.08]">
+      <div className="sticky top-0 z-40 bg-[#0B0A09]/95 backdrop-blur-xl border-b border-white/[0.08]">
         <div className="flex items-center gap-3 px-4 h-14">
           <button
             onClick={() => navigate("/inbox")}
@@ -137,8 +90,8 @@ export default function ChatRoom() {
           />
           <div className="flex-1 min-w-0">
             <p className="text-white font-semibold text-sm truncate">Hanna Dowie</p>
-            <p className="text-emerald-400 text-[11px] flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <p className="text-[#10b981] text-[11px] flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
               Online
             </p>
           </div>
@@ -182,13 +135,13 @@ export default function ChatRoom() {
                 <div
                   className={`max-w-[78%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
                     isMe
-                      ? "bg-gradient-to-r from-[#24A3C7] to-[#6139F2] text-white rounded-br-xs shadow-md"
-                      : "bg-white/10 text-white/90 rounded-bl-xs border border-white/10"
+                      ? "bg-[#FFB800] text-black font-medium rounded-br-xs shadow-md"
+                      : "bg-[#181513] text-white/90 rounded-bl-xs border border-white/10"
                   }`}
                 >
                   {msg.media_type === "voice" || msg.media_url?.includes("voice") ? (
                     <div className="flex items-center gap-2 py-0.5">
-                      <Mic className="w-4 h-4 text-[#24A3C7]" />
+                      <Mic className={`w-4 h-4 ${isMe ? "text-black" : "text-[#FFB800]"}`} />
                       <span className="font-semibold text-xs">Voice Message</span>
                       {msg.media_url && (
                         <audio src={msg.media_url} controls className="h-7 w-44 mt-1 block" />
@@ -211,7 +164,7 @@ export default function ChatRoom() {
 
                   <p
                     className={`text-[10px] mt-1 text-right font-mono ${
-                      isMe ? "text-white/70" : "text-white/40"
+                      isMe ? "text-black/60" : "text-white/40"
                     }`}
                   >
                     {timeText}
@@ -224,14 +177,14 @@ export default function ChatRoom() {
       </div>
 
       {/* Input Composer Bar */}
-      <div className="px-4 py-3 bg-[#06101D] border-t border-white/10 sticky bottom-0 z-40">
+      <div className="px-4 py-3 bg-[#0B0A09] border-t border-white/10 sticky bottom-0 z-40">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsVoiceModalOpen(true)}
             className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 hover:bg-white/20 transition active:scale-95 text-white/80"
             aria-label="Voice message"
           >
-            <Mic className="w-5 h-5 text-[#24A3C7]" />
+            <Mic className="w-5 h-5 text-[#FFB800]" />
           </button>
 
           <button
@@ -242,44 +195,43 @@ export default function ChatRoom() {
             <ImageIcon className="w-5 h-5 text-white/60" />
           </button>
 
-          <div className="flex-1 bg-white/10 rounded-full px-4 py-2 border border-white/15 focus-within:border-[#24A3C7]">
+          <div className="flex-1 bg-[#181513] rounded-full px-4 py-2 border border-white/15 focus-within:border-[#FFB800]">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Type a message..."
-              className="w-full bg-transparent text-white text-sm placeholder-white/40 outline-none"
+              placeholder="Type message..."
+              className="w-full bg-transparent text-white text-sm placeholder:text-white/40 outline-none"
             />
           </div>
 
           <button
-            onClick={handleSendMessage}
+            onClick={handleSend}
             disabled={!input.trim()}
-            className="w-10 h-10 rounded-full bg-gradient-to-r from-[#24A3C7] to-[#6139F2] hover:opacity-90 flex items-center justify-center flex-shrink-0 transition active:scale-95 text-white shadow-lg disabled:opacity-40"
+            className="w-10 h-10 rounded-full bg-[#FFB800] text-black flex items-center justify-center flex-shrink-0 shadow-md disabled:opacity-40 transition active:scale-95 hover:bg-[#FFB800]/90"
             aria-label="Send message"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-4 h-4 ml-0.5" />
           </button>
         </div>
       </div>
 
-      {/* Voice Message Recorder Modal */}
+      {/* Real Voice Recording Modal */}
       {isVoiceModalOpen && (
         <VoiceNoteRecorderModal
           open={isVoiceModalOpen}
           onClose={() => setIsVoiceModalOpen(false)}
-          conversationId={conversationId}
-          mode="message"
-          onPublished={(url) => {
-            if (url) {
-              sendMessage("🎤 Voice message", url, "voice");
-              toast.success("Voice message sent!");
-            }
+          onPublished={() => {
+            toast.success("Voice message sent!");
             setIsVoiceModalOpen(false);
           }}
+          mode="direct_message"
+          recipientId={conversationId}
         />
       )}
     </div>
   );
 }
+
+export default ChatRoom;
