@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Send, Mic, Image as ImageIcon, Phone } from "lucide-react";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/contexts/AuthContext";
+import { MessageService } from "@/services/messages";
+import { Avatar } from "@/components/common/Avatar";
 import { VoiceNoteRecorderModal } from "@/components/voice/VoiceNoteRecorderModal";
 import { SkeletonList } from "@/components/common/SkeletonLoader";
 import { toast } from "sonner";
@@ -14,18 +16,27 @@ export function ChatRoom() {
   const { messages, sendMessage, sendMediaMessage, isLoading } = useMessages(conversationId);
   const [input, setInput] = useState("");
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [otherUser, setOtherUser] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const activeUserId = user?.id || "";
 
-  const activeMessages = messages;
+  useEffect(() => {
+    async function loadParticipant() {
+      if (conversationId && activeUserId) {
+        const other = await MessageService.getOtherUser(conversationId, activeUserId);
+        if (other) setOtherUser(other);
+      }
+    }
+    loadParticipant();
+  }, [conversationId, activeUserId]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [activeMessages]);
+  }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -59,7 +70,7 @@ export function ChatRoom() {
 
   return (
     <div className="min-h-screen bg-[#0B0A09] text-white flex flex-col">
-      {/* Header */}
+      {/* Dynamic Header */}
       <div className="sticky top-0 z-40 bg-[#0B0A09]/95 backdrop-blur-xl border-b border-white/[0.08]">
         <div className="flex items-center gap-3 px-4 h-14">
           <button
@@ -69,21 +80,29 @@ export function ChatRoom() {
           >
             <ArrowLeft className="w-5 h-5 text-white/80" />
           </button>
-          <img
-            src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
-            alt="Participant"
-            className="w-9 h-9 rounded-full object-cover border border-white/15 shadow-sm"
+
+          <Avatar
+            size={36}
+            profile={{
+              id: otherUser?.id || "other",
+              display_name: otherUser?.display_name || otherUser?.username || "Creator",
+              avatar_url: otherUser?.avatar_url,
+            }}
+            className="rounded-full shrink-0"
           />
+
           <div className="flex-1 min-w-0">
-            <p className="text-white font-semibold text-sm truncate">Hanna Dowie</p>
+            <p className="text-white font-semibold text-sm truncate">
+              {otherUser?.display_name || otherUser?.username || "Direct Message"}
+            </p>
             <p className="text-[#10b981] text-[11px] flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
-              Online
+              Active Now
             </p>
           </div>
+
           <button
             onClick={() => {
-              toast.info("Direct call requires a Live Voice Room. Opening Audio Stage...");
               navigate("/rooms");
             }}
             className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition active:scale-95 text-white"
@@ -105,118 +124,92 @@ export function ChatRoom() {
 
       {/* Messages Stream */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-24">
-        {isLoading && activeMessages.length === 0 ? (
+        {isLoading && messages.length === 0 ? (
           <SkeletonList />
         ) : (
-          activeMessages.map((msg) => {
-            const isMe = msg.sender_id === activeUserId || msg.sender_id === "me";
-            const timeText = msg.created_at
-              ? msg.created_at.includes("T")
-                ? new Date(msg.created_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : msg.created_at
-              : "Now";
-
+          messages.map((msg) => {
+            const isMine = msg.sender_id === activeUserId;
             return (
-              <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+              <div key={msg.id} className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}>
                 <div
-                  className={`max-w-[78%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                    isMe
-                      ? "bg-[#FFB800] text-black font-medium rounded-br-xs shadow-md"
-                      : "bg-[#181513] text-white/90 rounded-bl-xs border border-white/10"
+                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-xs font-medium leading-relaxed ${
+                    isMine
+                      ? "bg-[#FFB800] text-black font-bold rounded-tr-sm"
+                      : "bg-[#181513] text-white border border-white/10 rounded-tl-sm"
                   }`}
                 >
-                  {msg.media_type === "voice" || msg.media_url?.includes("voice") ? (
-                    <div className="flex items-center gap-2 py-0.5">
-                      <Mic className={`w-4 h-4 ${isMe ? "text-black" : "text-[#FFB800]"}`} />
-                      <span className="font-semibold text-xs">Voice Message</span>
-                      {msg.media_url && (
-                        <audio src={msg.media_url} controls className="h-7 w-44 mt-1 block" />
-                      )}
-                    </div>
-                  ) : msg.media_type === "image" || msg.media_url?.includes("image") ? (
-                    <div className="space-y-1">
-                      {msg.media_url && (
-                        <img
-                          src={msg.media_url}
-                          alt="Attached"
-                          className="max-w-full rounded-xl max-h-48 object-cover"
-                        />
-                      )}
-                      <p>{msg.content}</p>
-                    </div>
+                  {msg.media_url ? (
+                    <img
+                      src={msg.media_url}
+                      alt="Attachment"
+                      className="rounded-xl max-h-60 object-cover my-1"
+                    />
                   ) : (
                     <p>{msg.content}</p>
                   )}
-
-                  <p
-                    className={`text-[10px] mt-1 text-right font-mono ${
-                      isMe ? "text-black/60" : "text-white/40"
-                    }`}
-                  >
-                    {timeText}
-                  </p>
                 </div>
+                <span className="text-[10px] text-white/40 mt-1 px-1">
+                  {new Date(msg.created_at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
               </div>
             );
           })
         )}
       </div>
 
-      {/* Input Composer Bar */}
-      <div className="px-4 py-3 bg-[#0B0A09] border-t border-white/10 sticky bottom-0 z-40">
+      {/* Bottom Composer */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0A09] border-t border-white/10 p-3 max-w-[430px] mx-auto">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsVoiceModalOpen(true)}
-            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 hover:bg-white/20 transition active:scale-95 text-white/80"
-            aria-label="Voice message"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 text-white/70 hover:text-white shrink-0"
+            aria-label="Attach photo"
           >
-            <Mic className="w-5 h-5 text-[#FFB800]" />
+            <ImageIcon size={18} />
           </button>
 
           <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 hover:bg-white/20 transition active:scale-95 text-white/80"
-            aria-label="Attach photo"
+            onClick={() => setIsVoiceModalOpen(true)}
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 text-white/70 hover:text-white shrink-0"
+            aria-label="Voice message"
           >
-            <ImageIcon className="w-5 h-5 text-white/60" />
+            <Mic size={18} />
           </button>
 
-          <div className="flex-1 bg-[#181513] rounded-full px-4 py-2 border border-white/15 focus-within:border-[#FFB800]">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type message..."
-              className="w-full bg-transparent text-white text-sm placeholder:text-white/40 outline-none"
-            />
-          </div>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message..."
+            className="flex-1 h-10 px-4 rounded-xl bg-[#181513] text-xs text-white placeholder-white/40 border border-white/10 focus:outline-none focus:border-[#FFB800]"
+          />
 
           <button
             onClick={handleSend}
             disabled={!input.trim()}
-            className="w-10 h-10 rounded-full bg-[#FFB800] text-black flex items-center justify-center flex-shrink-0 shadow-md disabled:opacity-40 transition active:scale-95 hover:bg-[#FFB800]/90"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#FFB800] text-black font-bold disabled:opacity-40 transition active:scale-95 shrink-0"
             aria-label="Send message"
           >
-            <Send className="w-4 h-4 ml-0.5" />
+            <Send size={16} />
           </button>
         </div>
       </div>
 
-      {/* Real Voice Recording Modal */}
+      {/* Voice Recorder Modal */}
       {isVoiceModalOpen && (
         <VoiceNoteRecorderModal
           open={isVoiceModalOpen}
           onClose={() => setIsVoiceModalOpen(false)}
           onPublished={() => {
-            toast.success("Voice message sent!");
             setIsVoiceModalOpen(false);
+            toast.success("Voice message sent!");
           }}
-          mode="message"
-          recipientId={conversationId}
+          mode="voicemail"
+          recipientId={otherUser?.id}
         />
       )}
     </div>

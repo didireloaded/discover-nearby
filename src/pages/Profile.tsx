@@ -17,6 +17,7 @@ import { VoiceIntroPlayer } from "@/components/voice/VoiceIntroPlayer";
 import { VoiceNoteRecorderModal } from "@/components/voice/VoiceNoteRecorderModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFollow } from "@/hooks/useFollow";
+import { useSaves } from "@/hooks/useSaves";
 import { supabase } from "@/lib/supabase";
 import { Avatar } from "@/components/common/Avatar";
 import { NoteCard } from "@/components/feed/NoteCard";
@@ -27,6 +28,7 @@ export function Profile() {
   const { username } = useParams<{ username?: string }>();
   const navigate = useNavigate();
   const { profile: currentUser, requireAuth } = useAuth();
+  const { savedNotes, fetchSavedNotes } = useSaves();
 
   const [isVoicemailOpen, setIsVoicemailOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"posts" | "voice" | "events" | "saved">("posts");
@@ -41,6 +43,12 @@ export function Profile() {
 
   const targetId = userProfile?.id || currentUser?.id;
   const { isFollowing, toggleFollow } = useFollow(targetId);
+
+  useEffect(() => {
+    if (activeTab === "saved") {
+      fetchSavedNotes();
+    }
+  }, [activeTab, fetchSavedNotes]);
 
   const isOwnProfile =
     !username || username === currentUser?.username || username === currentUser?.id;
@@ -350,12 +358,18 @@ export function Profile() {
         )}
 
         {activeTab === "saved" && (
-          <div className="text-center py-10 bg-[#181513] rounded-2xl border border-white/10 space-y-1.5">
-            <Bookmark size={24} className="mx-auto text-[#FFB800]" />
-            <p className="text-xs font-bold text-white/70">Saved Library</p>
-            <p className="text-[11px] text-white/40 max-w-[220px] mx-auto">
-              Notes you bookmark will be saved here privately.
-            </p>
+          <div className="space-y-3">
+            {savedNotes.length > 0 ? (
+              savedNotes.map((note) => <NoteCard key={note.id} note={note as any} />)
+            ) : (
+              <div className="text-center py-10 bg-[#181513] rounded-2xl border border-white/10 space-y-1.5">
+                <Bookmark size={24} className="mx-auto text-[#FFB800]" />
+                <p className="text-xs font-bold text-white/70">Saved Library Empty</p>
+                <p className="text-[11px] text-white/40 max-w-[220px] mx-auto">
+                  Notes you bookmark will be saved here privately.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

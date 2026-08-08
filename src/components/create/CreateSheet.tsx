@@ -75,7 +75,10 @@ export function CreateSheet({ open, onClose }: CreateSheetProps) {
 
     setIsSubmitting(true);
     try {
-      const result = await NoteService.createNote(profile.id, noteContent.trim(), "text");
+      const result =
+        noteKind === "temporary"
+          ? await NoteService.createTemporaryNote(profile.id, noteContent.trim())
+          : await NoteService.createPermanentNote(profile.id, noteContent.trim());
       if (result) {
         toast.success(
           noteKind === "temporary"

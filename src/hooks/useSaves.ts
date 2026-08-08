@@ -13,11 +13,11 @@ export function useSaves() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from("saves")
+        .from("bookmarks")
         .select(
           `
           note_id,
-          notes (*, profiles!notes_author_id_fkey(*))
+          notes (*, profiles!notes_user_id_fkey(*))
         `,
         )
         .eq("user_id", user.id)

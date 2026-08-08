@@ -169,7 +169,7 @@ export function NoteCard({ note }: NoteCardProps) {
   };
 
   const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/notes/${note.id}`;
+    const shareUrl = `${window.location.origin}/note/${note.id}`;
     if (navigator.share) {
       try {
         await navigator.share({

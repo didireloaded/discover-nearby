@@ -77,6 +77,9 @@ vi.mock("@/pages/NotFound", () => ({
 vi.mock("@/components/karaoke/KaraokeRoom", () => ({
   KaraokeRoom: () => <div>Room page</div>,
 }));
+vi.mock("@/components/voice/LiveRoom", () => ({
+  LiveRoom: () => <div>LiveRoom page</div>,
+}));
 
 function renderRoute(path: string) {
   return render(
@@ -126,7 +129,7 @@ describe("AppRoutes", () => {
 
   it("resolves /room/:id outside the main layout", async () => {
     renderRoute("/room/room-1");
-    expect(await screen.findByText("Explore Rooms page")).toBeInTheDocument();
+    expect(await screen.findByText("LiveRoom page")).toBeInTheDocument();
     expect(screen.queryByText("Matisa shell")).not.toBeInTheDocument();
   });
 

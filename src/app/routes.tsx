@@ -37,6 +37,9 @@ const Rooms = lazy(() => import("@/pages/Rooms").then((m) => ({ default: m.Rooms
 const KaraokeRoom = lazy(() =>
   import("@/components/karaoke/KaraokeRoom").then((m) => ({ default: m.KaraokeRoom })),
 );
+const LiveRoom = lazy(() =>
+  import("@/components/voice/LiveRoom").then((m) => ({ default: m.LiveRoom })),
+);
 
 export function AppRoutes() {
   return (
@@ -142,11 +145,11 @@ export function AppRoutes() {
         }
       />
       {/* Disambiguated room routes */}
-      <Route path="/rooms/voice/:roomId" element={<ExploreRooms />} />
-      <Route path="/room/:roomId" element={<ExploreRooms />} />
+      <Route path="/rooms/voice/:roomId" element={<LiveRoom />} />
+      <Route path="/room/:roomId" element={<LiveRoom />} />
       <Route path="/rooms/karaoke/:roomId" element={<KaraokeRoom />} />
       <Route path="/karaoke/:roomId" element={<KaraokeRoom />} />
-      <Route path="/live/:roomId" element={<ExploreRooms />} />
+      <Route path="/live/:roomId" element={<LiveRoom />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

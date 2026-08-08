@@ -1,95 +1,99 @@
-// src/pages/ExplorePeople.tsx
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, UserPlus } from 'lucide-react';
-
-const people = [
-  {
-    id: '1',
-    name: 'Hanna Dowie',
-    username: 'hanna_d',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    location: 'Windhoek',
-    distance: '2km away',
-    mutualFriends: 3,
-    bio: 'Creative director & storyteller',
-  },
-  {
-    id: '2',
-    name: 'Jason Mutonga',
-    username: 'jason_w',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-    location: 'Windhoek',
-    distance: '5km away',
-    mutualFriends: 1,
-    bio: "Photographer capturing Namibia's beauty",
-  },
-  {
-    id: '3',
-    name: 'Silas Vibe',
-    username: 'silas_m',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop',
-    location: 'Swakopmund',
-    distance: '350km away',
-    mutualFriends: 0,
-    bio: 'Tech enthusiast & AI builder',
-  },
-];
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, UserPlus } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { Avatar } from "@/components/common/Avatar";
+import { SkeletonList } from "@/components/common/SkeletonLoader";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export default function ExplorePeople() {
   const navigate = useNavigate();
+  const { requireAuth } = useAuth();
+  const [people, setPeople] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadPeople() {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        if (data) setPeople(data);
+      } catch (err) {
+        console.error("Failed to load creators:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadPeople();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/[0.06]">
-        <div className="flex items-center gap-3 px-4 h-14">
-          <button
-            onClick={() => navigate('/explore')}
-            className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center"
-          >
-            <ArrowLeft className="w-5 h-5 text-white/70" />
-          </button>
-          <h1 className="text-white font-bold text-lg">People Nearby</h1>
-        </div>
+    <div className="min-h-screen bg-[#0B0A09] text-white pb-28">
+      <div className="sticky top-0 z-40 bg-[#0B0A09] border-b border-white/10 px-4 h-14 flex items-center gap-3">
+        <button
+          onClick={() => navigate("/explore")}
+          className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-white/70 hover:text-white"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="text-white font-bold text-base font-display">Creators Nearby</h1>
       </div>
 
-      <div className="px-4 py-4 space-y-3">
-        {people.map((person) => (
-          <button
-            key={person.id}
-            onClick={() => navigate(`/profile/${person.username}`)}
-            className="w-full text-left bg-[#111111] rounded-2xl border border-white/[0.06] p-4"
-          >
-            <div className="flex items-start gap-3">
-              <img
-                src={person.avatar}
-                alt={person.name}
-                className="w-12 h-12 rounded-full object-cover"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-white font-semibold text-sm">{person.name}</p>
-                    <p className="text-white/40 text-xs">@{person.username}</p>
-                  </div>
-                  <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                    <UserPlus className="w-4 h-4 text-white/50" />
-                  </div>
-                </div>
-                <p className="text-white/50 text-xs mt-1">{person.bio}</p>
-                <div className="flex items-center gap-3 mt-2 text-white/30 text-xs">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" />
-                    <span>{person.location}</span>
-                  </div>
-                  <span>{person.distance}</span>
-                  {person.mutualFriends > 0 && (
-                    <span>{person.mutualFriends} mutual friends</span>
+      <div className="px-4 py-4 space-y-2">
+        {loading ? (
+          <SkeletonList />
+        ) : people.length > 0 ? (
+          people.map((person) => (
+            <div
+              key={person.id}
+              onClick={() => navigate(`/profile/${person.username}`)}
+              className="w-full text-left bg-[#181513] rounded-2xl border border-white/10 p-3.5 flex items-center justify-between hover:border-white/20 transition cursor-pointer"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <Avatar
+                  size={44}
+                  profile={{
+                    id: person.id,
+                    display_name: person.display_name,
+                    avatar_url: person.avatar_url,
+                  }}
+                  className="rounded-full shrink-0"
+                />
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-white truncate">
+                    {person.display_name || person.username}
+                  </p>
+                  <p className="text-[11px] text-white/40 truncate">@{person.username}</p>
+                  {person.bio && (
+                    <p className="text-[11px] text-white/60 truncate mt-0.5 max-w-[200px]">
+                      {person.bio}
+                    </p>
                   )}
                 </div>
               </div>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  requireAuth(() => toast.success(`Following @${person.username}`));
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#FFB800] text-black font-bold text-xs hover:bg-[#FFB800]/90 transition shrink-0"
+              >
+                <UserPlus size={13} />
+                <span>Follow</span>
+              </button>
             </div>
-          </button>
-        ))}
+          ))
+        ) : (
+          <div className="py-10 text-center text-xs text-white/40 bg-[#181513] rounded-2xl border border-white/10">
+            No creators found
+          </div>
+        )}
       </div>
     </div>
   );
