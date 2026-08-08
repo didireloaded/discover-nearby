@@ -1,4 +1,4 @@
-import { Home, Search, Plus, Radio, User } from "lucide-react";
+import { Home, Search, Plus, Bell, User } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
 
 interface BottomNavigationProps {
@@ -12,12 +12,16 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
 
   const isHomeActive = path === "/";
   const isExploreActive = path === "/explore" || path.startsWith("/explore");
-  const isRoomsActive = path === "/rooms" || path.startsWith("/rooms");
+  const isRoomsActive =
+    path === "/rooms" ||
+    path.startsWith("/rooms") ||
+    path === "/notifications" ||
+    path === "/activity";
   const isProfileActive = path === "/profile" || path.startsWith("/profile");
 
   return (
     <nav
-      className={`fixed left-1/2 z-50 grid grid-cols-5 items-center -translate-x-1/2 overflow-hidden rounded-full border border-white/20 bg-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl transition-all duration-300 ease-out hover:opacity-100 ${
+      className={`fixed left-1/2 z-50 grid grid-cols-5 items-center -translate-x-1/2 overflow-hidden rounded-full border border-white/12 bg-[#231F1C]/95 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-2xl transition-all duration-300 ease-out hover:opacity-100 ${
         compact
           ? "bottom-3 h-11 w-[72%] max-w-[290px] px-1 opacity-85 translate-y-1 scale-95"
           : "bottom-5 h-14 w-[92%] max-w-[390px] px-2 opacity-100 translate-y-0 scale-100"
@@ -34,17 +38,17 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
       >
         <div
           className={`flex items-center justify-center p-2 rounded-full transition ${
-            isHomeActive ? "text-[#FF9D2E]" : "text-white/60 hover:text-white"
+            isHomeActive ? "text-[#FFB800]" : "text-white/60 hover:text-white"
           }`}
         >
           <Home size={20} strokeWidth={isHomeActive ? 2.5 : 2} />
         </div>
         {isHomeActive && (
-          <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#FF9D2E] shadow-[0_0_8px_#FF9D2E]" />
+          <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#FFB800] shadow-[0_0_8px_#FFB800]" />
         )}
       </Link>
 
-      {/* 2. Explore */}
+      {/* 2. Explore / Search */}
       <Link
         to="/explore"
         className="relative flex items-center justify-center py-1.5 transition active:scale-95 text-white/60 hover:text-white"
@@ -52,13 +56,13 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
       >
         <div
           className={`flex items-center justify-center p-2 rounded-full transition ${
-            isExploreActive ? "text-[#FF9D2E]" : "text-white/60 hover:text-white"
+            isExploreActive ? "text-[#FFB800]" : "text-white/60 hover:text-white"
           }`}
         >
           <Search size={20} strokeWidth={isExploreActive ? 2.5 : 2} />
         </div>
         {isExploreActive && (
-          <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#FF9D2E] shadow-[0_0_8px_#FF9D2E]" />
+          <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#FFB800] shadow-[0_0_8px_#FFB800]" />
         )}
       </Link>
 
@@ -73,21 +77,21 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
         <Plus size={compact ? 18 : 22} strokeWidth={3} className="text-black" />
       </button>
 
-      {/* 4. Rooms */}
+      {/* 4. Notifications / Bell */}
       <Link
-        to="/rooms"
+        to="/activity"
         className="relative flex items-center justify-center py-1.5 transition active:scale-95 text-white/60 hover:text-white"
-        aria-label="Rooms"
+        aria-label="Notifications"
       >
         <div
           className={`flex items-center justify-center p-2 rounded-full transition ${
-            isRoomsActive ? "text-[#FF9D2E]" : "text-white/60 hover:text-white"
+            isRoomsActive ? "text-[#FFB800]" : "text-white/60 hover:text-white"
           }`}
         >
-          <Radio size={20} strokeWidth={isRoomsActive ? 2.5 : 2} />
+          <Bell size={20} strokeWidth={isRoomsActive ? 2.5 : 2} />
         </div>
         {isRoomsActive && (
-          <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#FF9D2E] shadow-[0_0_8px_#FF9D2E]" />
+          <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#FFB800] shadow-[0_0_8px_#FFB800]" />
         )}
       </Link>
 
@@ -99,13 +103,13 @@ export function BottomNavigation({ onOpenCreate, compact = false }: BottomNaviga
       >
         <div
           className={`flex items-center justify-center p-2 rounded-full transition ${
-            isProfileActive ? "text-[#FF9D2E]" : "text-white/60 hover:text-white"
+            isProfileActive ? "text-[#FFB800]" : "text-white/60 hover:text-white"
           }`}
         >
           <User size={20} strokeWidth={isProfileActive ? 2.5 : 2} />
         </div>
         {isProfileActive && (
-          <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#FF9D2E] shadow-[0_0_8px_#FF9D2E]" />
+          <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[#FFB800] shadow-[0_0_8px_#FFB800]" />
         )}
       </Link>
     </nav>

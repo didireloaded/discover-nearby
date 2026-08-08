@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { USERS } from "@/data/dummy";
 import { Avatar } from "@/components/common/Avatar";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
 import { useNotes } from "@/hooks/useNotes";
 import { StoryService } from "@/services/stories";
 import { CreateStoryModal } from "@/components/stories/CreateStoryModal";
@@ -29,10 +28,6 @@ export function Home() {
   const [isVoiceRecorderOpen, setIsVoiceRecorderOpen] = useState(false);
   const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
-
-  const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({
-    maria_theodore: true,
-  });
 
   useEffect(() => {
     async function loadStories() {
@@ -128,24 +123,16 @@ export function Home() {
 
   const activeFeed = feedTab === "discover" ? discoverFeed : followingFeed;
 
-  const toggleFollow = (username: string) => {
-    setFollowingMap((prev) => {
-      const next = !prev[username];
-      toast.success(next ? `Following @${username}` : `Unfollowed @${username}`);
-      return { ...prev, [username]: next };
-    });
-  };
-
   return (
-    <div className="flex flex-col min-h-full pb-28 pt-1 bg-[#0D0B0A] text-white">
-      {/* 1. Header & Feed Tabs */}
+    <div className="flex flex-col min-h-full pb-28 pt-1 bg-[#0B0A09] text-white">
+      {/* 1. Header & Feed Selector */}
       <div className="px-5 mb-3 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <button
             onClick={() => setFeedTab("discover")}
             className={`pb-1 text-lg font-bold tracking-wide transition relative font-display ${
               feedTab === "discover"
-                ? "text-white border-b-2 border-[#FF9D2E]"
+                ? "text-white border-b-2 border-[#FFB800]"
                 : "text-white/40 hover:text-white/70"
             }`}
           >
@@ -156,7 +143,7 @@ export function Home() {
             onClick={() => setFeedTab("following")}
             className={`pb-1 text-lg font-bold tracking-wide transition relative font-display ${
               feedTab === "following"
-                ? "text-white border-b-2 border-[#FF9D2E]"
+                ? "text-white border-b-2 border-[#FFB800]"
                 : "text-white/40 hover:text-white/70"
             }`}
           >
@@ -167,9 +154,9 @@ export function Home() {
         {/* Quick Voice Note Action */}
         <button
           onClick={() => setIsVoiceRecorderOpen(true)}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FF9D2E]/15 text-[#FF9D2E] border border-[#FF9D2E]/30 text-xs font-bold hover:bg-[#FF9D2E]/25 transition active:scale-95 shadow-md"
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FFB800]/15 text-[#FFB800] border border-[#FFB800]/30 text-xs font-bold hover:bg-[#FFB800]/25 transition active:scale-95 shadow-md"
         >
-          <Mic size={14} className="text-[#FF9D2E]" />
+          <Mic size={14} className="text-[#FFB800]" />
           <span>Voice Note</span>
         </button>
       </div>
@@ -190,7 +177,7 @@ export function Home() {
               onClick={() => setCategoryFilter(tab.id as any)}
               className={`px-4 py-1.5 rounded-full text-xs font-bold transition whitespace-nowrap relative ${
                 isActive
-                  ? "bg-[#FF9D2E] text-black shadow-md"
+                  ? "bg-[#FFB800] text-black shadow-md"
                   : "bg-white/5 text-white/60 hover:text-white hover:bg-white/10"
               }`}
             >
@@ -200,15 +187,15 @@ export function Home() {
         })}
       </div>
 
-      {/* 3. Story Rail matching Blueprint (Screen 1 & 2) */}
+      {/* 3. Story Rail matching Blueprint */}
       <div className="px-5 mb-4 overflow-x-auto no-scrollbar flex items-center gap-4 py-1">
         {/* Your Story Tile */}
         <button
           onClick={() => setIsCreateStoryOpen(true)}
           className="flex flex-col items-center gap-1.5 flex-shrink-0 group active:scale-95 transition"
         >
-          <div className="relative h-[66px] w-[66px] rounded-full p-[2px] bg-gradient-to-tr from-[#FF9D2E] to-[#FFB800] flex items-center justify-center shadow-md">
-            <div className="h-full w-full rounded-full bg-[#0D0B0A] flex items-center justify-center">
+          <div className="relative h-[66px] w-[66px] rounded-full p-[2px] bg-gradient-to-tr from-[#FFB800] to-[#FF9D2E] flex items-center justify-center shadow-md">
+            <div className="h-full w-full rounded-full bg-[#0B0A09] flex items-center justify-center">
               <Avatar
                 size={60}
                 profile={{
@@ -218,7 +205,7 @@ export function Home() {
                 }}
               />
             </div>
-            <div className="absolute bottom-0 right-0 h-5.5 w-5.5 rounded-full bg-[#FF9D2E] text-black flex items-center justify-center border-2 border-[#0D0B0A] shadow">
+            <div className="absolute bottom-0 right-0 h-5.5 w-5.5 rounded-full bg-[#FFB800] text-black flex items-center justify-center border-2 border-[#0B0A09] shadow">
               <Plus size={13} strokeWidth={3} />
             </div>
           </div>
@@ -253,7 +240,7 @@ export function Home() {
                 <span className="text-[11px] font-medium text-white/80 text-center truncate">
                   {firstName}
                 </span>
-                <CheckCircle2 size={10} className="text-[#FF9D2E] shrink-0" />
+                <CheckCircle2 size={10} className="text-[#FFB800] shrink-0" />
               </div>
             </button>
           );
@@ -264,14 +251,14 @@ export function Home() {
       <div className="px-5 mb-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-[#FF9D2E] rounded-full shadow-[0_0_8px_#FF9D2E]" />
+            <div className="w-2 h-2 bg-[#FFB800] rounded-full shadow-[0_0_8px_#FFB800]" />
             <span className="text-xs font-bold text-white tracking-wide uppercase font-display">
               Live Rooms Right Now
             </span>
           </div>
           <button
             onClick={() => navigate("/rooms")}
-            className="text-[11px] font-bold text-[#FF9D2E] hover:underline"
+            className="text-[11px] font-bold text-[#FFB800] hover:underline"
           >
             View all
           </button>
@@ -280,9 +267,9 @@ export function Home() {
         <div className="flex items-center gap-3 overflow-x-auto no-scrollbar py-0.5">
           <button
             onClick={() => navigate("/rooms/demo-room-1")}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-[18px] bg-white/5 border border-white/15 hover:border-[#FF9D2E]/60 transition active:scale-95 flex-shrink-0"
+            className="flex items-center gap-2.5 px-3.5 py-2 rounded-[18px] bg-white/5 border border-white/10 hover:border-[#FFB800]/60 transition active:scale-95 flex-shrink-0"
           >
-            <Radio size={15} className="text-[#FF9D2E] animate-pulse" />
+            <Radio size={15} className="text-[#FFB800] animate-pulse" />
             <div className="text-left">
               <div className="text-xs font-bold text-white truncate max-w-[140px]">
                 Afrobeats Only 🔥
@@ -293,9 +280,9 @@ export function Home() {
 
           <button
             onClick={() => navigate("/rooms/demo-room-1")}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-[18px] bg-white/5 border border-white/15 hover:border-[#FF9D2E]/60 transition active:scale-95 flex-shrink-0"
+            className="flex items-center gap-2.5 px-3.5 py-2 rounded-[18px] bg-white/5 border border-white/10 hover:border-[#FFB800]/60 transition active:scale-95 flex-shrink-0"
           >
-            <Mic size={15} className="text-[#FF9D2E] animate-pulse" />
+            <Mic size={15} className="text-[#FFB800] animate-pulse" />
             <div className="text-left">
               <div className="text-xs font-bold text-white truncate max-w-[140px]">
                 Namibian Hits Jam
@@ -352,11 +339,8 @@ export function Home() {
       </AnimatePresence>
 
       {/* Modals & Viewers */}
-      {(isCommentsOpen) => (
-        <CommentsModal
-          postId={activeCommentsPostId || ""}
-          onClose={() => setActiveCommentsPostId(null)}
-        >
+      {activeCommentsPostId && (
+        <CommentsModal postId={activeCommentsPostId} onClose={() => setActiveCommentsPostId(null)}>
           <span className="hidden" />
         </CommentsModal>
       )}

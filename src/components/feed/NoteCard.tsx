@@ -199,8 +199,8 @@ export function NoteCard({ note }: NoteCardProps) {
     : [35, 60, 40, 80, 100, 50, 75, 90, 45, 65, 85, 30, 70, 95, 40, 60];
 
   return (
-    <div className="relative w-full rounded-[28px] glass-card p-5 border border-white/15 bg-gradient-to-b from-[#1C1714]/90 to-[#120F0D]/90 shadow-2xl space-y-4 overflow-hidden">
-      {/* 1. Translucent Top Floating Author Header Capsule */}
+    <div className="relative w-full rounded-[28px] bg-[#181513] p-5 border border-white/10 shadow-2xl space-y-4 overflow-hidden">
+      {/* 1. Translucent Top Author Header Capsule */}
       <div className="flex items-center justify-between gap-3">
         <div
           onClick={() => navigate(`/profile/${authorUsername}`)}
@@ -218,7 +218,7 @@ export function NoteCard({ note }: NoteCardProps) {
             <span className="text-xs font-bold text-white truncate max-w-[130px]">
               {authorName}
             </span>
-            <CheckCircle2 size={13} className="text-[#FF9D2E] fill-[#FF9D2E]/20 shrink-0" />
+            <CheckCircle2 size={13} className="text-[#FFB800] fill-[#FFB800]/20 shrink-0" />
           </div>
           <span className="text-[10px] text-white/50 shrink-0 font-medium">45 Minutes ago</span>
         </div>
@@ -232,12 +232,12 @@ export function NoteCard({ note }: NoteCardProps) {
         </button>
       </div>
 
-      {/* 2. Media Image / Video / Text Container */}
+      {/* 2. Media Image / Content */}
       <div className="relative rounded-[22px] overflow-hidden">
-        {note.media_url ? (
+        {(note as any).media_url ? (
           <div className="relative aspect-[4/3] w-full rounded-[22px] overflow-hidden bg-black/40 border border-white/10">
             <img
-              src={note.media_url}
+              src={(note as any).media_url}
               alt="Note attachment"
               className="w-full h-full object-cover"
             />
@@ -262,10 +262,10 @@ export function NoteCard({ note }: NoteCardProps) {
         {note.type === "voice" && (
           <div className="mt-3 space-y-2">
             {note.audio_url && (
-              <div className="flex items-center gap-3 p-3 rounded-[20px] bg-gradient-to-r from-[#FF9D2E]/15 to-[#FF6B35]/15 border border-[#FF9D2E]/30 backdrop-blur-md">
+              <div className="flex items-center gap-3 p-3 rounded-[20px] bg-white/5 border border-[#FFB800]/30 backdrop-blur-md">
                 <button
                   onClick={toggleAudioPlayback}
-                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#FF9D2E] text-black shadow-md active:scale-90 transition"
+                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#FFB800] text-black shadow-md active:scale-90 transition"
                   aria-label={isPlaying ? "Pause voice note" : "Play voice note"}
                 >
                   {isPlaying ? (
@@ -281,7 +281,7 @@ export function NoteCard({ note }: NoteCardProps) {
                       <div
                         key={idx}
                         className={`w-1 rounded-full transition-all duration-200 ${
-                          isPlaying ? "bg-[#FF9D2E] animate-pulse" : "bg-white/30"
+                          isPlaying ? "bg-[#FFB800] animate-pulse" : "bg-white/30"
                         }`}
                         style={{
                           height: `${Math.max(20, heightVal)}%`,
@@ -290,7 +290,7 @@ export function NoteCard({ note }: NoteCardProps) {
                       />
                     ))}
                     <div
-                      className="absolute inset-y-0 left-0 bg-[#FF9D2E]/30 pointer-events-none rounded-full"
+                      className="absolute inset-y-0 left-0 bg-[#FFB800]/30 pointer-events-none rounded-full"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -300,7 +300,7 @@ export function NoteCard({ note }: NoteCardProps) {
 
             {note.transcript && (
               <div className="px-3.5 py-2.5 rounded-[16px] bg-white/5 border border-white/10 text-xs text-white/90 space-y-1">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#FF9D2E] uppercase tracking-wider">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-[#FFB800] uppercase tracking-wider">
                   <FileText size={12} /> Transcript
                 </div>
                 <p className="italic leading-relaxed text-white/85">"{note.transcript}"</p>
@@ -310,9 +310,9 @@ export function NoteCard({ note }: NoteCardProps) {
         )}
       </div>
 
-      {/* 3. Bottom Reaction & Action Pill Bar */}
+      {/* 3. Bottom Reaction Bar (❤️ 125K | 💬 4.568 | 🔖 680) */}
       <div className="flex items-center justify-between pt-1">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-5">
           {/* Heart / Like */}
           <button
             onClick={handleLikeToggle}
@@ -321,10 +321,10 @@ export function NoteCard({ note }: NoteCardProps) {
           >
             <Heart
               size={18}
-              fill={isLiked ? "#FF9D2E" : "none"}
-              className={isLiked ? "text-[#FF9D2E]" : "text-white/70"}
+              fill={isLiked ? "#FFB800" : "none"}
+              className={isLiked ? "text-[#FFB800]" : "text-white/70"}
             />
-            <span className={`text-xs font-bold ${isLiked ? "text-[#FF9D2E]" : "text-white/80"}`}>
+            <span className={`text-xs font-bold ${isLiked ? "text-[#FFB800]" : "text-white/80"}`}>
               {formatK(likesCount)}
             </span>
           </button>
@@ -347,23 +347,23 @@ export function NoteCard({ note }: NoteCardProps) {
           >
             <Bookmark
               size={18}
-              fill={isSaved ? "#FF9D2E" : "none"}
-              className={isSaved ? "text-[#FF9D2E]" : "text-white/70"}
+              fill={isSaved ? "#FFB800" : "none"}
+              className={isSaved ? "text-[#FFB800]" : "text-white/70"}
             />
-            <span className={`text-xs font-bold ${isSaved ? "text-[#FF9D2E]" : "text-white/80"}`}>
+            <span className={`text-xs font-bold ${isSaved ? "text-[#FFB800]" : "text-white/80"}`}>
               {formatK(savesCount)}
             </span>
           </button>
         </div>
 
-        {/* Share & Continue Live Action */}
+        {/* Live Shortcut & Share */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
               toast.success(`Joining live room for @${authorUsername}`);
               navigate("/rooms");
             }}
-            className="flex items-center gap-1 px-3 py-1 rounded-full bg-[#FF9D2E]/20 text-[#FF9D2E] text-[11px] font-bold border border-[#FF9D2E]/30 hover:bg-[#FF9D2E]/30 transition active:scale-95"
+            className="flex items-center gap-1 px-3 py-1 rounded-full bg-[#FFB800]/15 text-[#FFB800] text-[11px] font-bold border border-[#FFB800]/30 hover:bg-[#FFB800]/25 transition active:scale-95"
           >
             <Radio size={12} className="animate-pulse" />
             <span>Live</span>
@@ -371,7 +371,7 @@ export function NoteCard({ note }: NoteCardProps) {
 
           <button
             onClick={handleShare}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/70 hover:text-white transition active:scale-95"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/70 hover:text-white transition active:scale-95"
             aria-label="Share"
           >
             <Share2 size={15} />
